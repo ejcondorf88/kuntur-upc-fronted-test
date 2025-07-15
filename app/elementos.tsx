@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Switch, View } from 'react-native';
+import { Modal, Switch, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
 import { useMockElements } from '../hooks/useMockElements';
 
@@ -126,6 +127,21 @@ const SwitchLabel = styled.Text`
 export default function ElementosScreen() {
   const [showAll, setShowAll] = useState(false);
   const mockElements = useMockElements();
+  const [selectedElement, setSelectedElement] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const router = useRouter();
+
+  const handleCardPress = (el) => {
+    setSelectedElement(el);
+    setModalVisible(true);
+  };
+
+  const handleConfirm = () => {
+    setModalVisible(false);
+    if (selectedElement) {
+      router.push({ pathname: '/crear-caso', params: { nombre: selectedElement.nombre } });
+    }
+  };
 
   return (
     <GradientBackground
@@ -152,17 +168,17 @@ export default function ElementosScreen() {
       </LocationSelector>
       <CardGrid>
         {mockElements.map((el) => (
-          <ElementCard key={el.id}>
-            <CardRow>
-              <Ionicons name="person" size={28} color="#6D28D9" style={{ marginRight: 8 }} />
-              <View>
-                <CardText>{el.nombre} {el.apellido}</CardText>
-                <CardSubText>{el.cargo}  ID:
-                  {'\n'}PNC-{el.pnc}
-                </CardSubText>
-              </View>
-            </CardRow>
-          </ElementCard>
+          <TouchableOpacity key={el.id} onPress={() => handleCardPress(el)}>
+            <ElementCard>
+              <CardRow>
+                <Ionicons name="person" size={28} color="#6D28D9" style={{ marginRight: 8 }} />
+                <View>
+                  <CardText>{el.nombre} {el.apellido}</CardText>
+                  <CardSubText>{el.cargo}  ID:{'\n'}PNC-{el.pnc}</CardSubText>
+                </View>
+              </CardRow>
+            </ElementCard>
+          </TouchableOpacity>
         ))}
       </CardGrid>
       <SwitchRow>
@@ -174,6 +190,32 @@ export default function ElementosScreen() {
           trackColor={{ true: '#c4b5fd', false: '#e5e7eb' }}
         />
       </SwitchRow>
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '90%', maxWidth: 400, alignItems: 'center' }}>
+            {selectedElement && (
+              <>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#6D28D9', marginBottom: 12 }}>Enviar elemento</Text>
+                <Text style={{ fontSize: 16, color: '#222', marginBottom: 24 }}>{selectedElement.nombre} {selectedElement.apellido}</Text>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#8B5CF6', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
+                  onPress={handleConfirm}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Confirmar y crear caso</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Text style={{ color: '#8B5CF6', fontSize: 16 }}>Cancelar</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </GradientBackground>
   );
 } 

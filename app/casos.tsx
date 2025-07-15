@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Modal, ScrollView, Text, TouchableOpacity } from 'react-native';
+import { Modal, ScrollView, Text, TextInput, TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
 import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
 import { MockCase, useMockCases } from '../hooks/useMockCases';
@@ -149,12 +150,49 @@ export default function CasosScreen() {
   const [selectedCase, setSelectedCase] = useState<MockCase | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const { generarParte } = useGeneratePartePolicial();
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [newCase, setNewCase] = useState({
+    id: '',
+    fecha: '',
+    ubicacion: '',
+    tipo: '',
+    estado: '',
+    nombrePolicia: '',
+    rango: '',
+    unidad: '',
+    idOficial: '',
+    resumen: '',
+  });
+  const router = useRouter();
 
   const openModal = (c: MockCase) => {
     setSelectedCase(c);
     setModalVisible(true);
   };
   const closeModal = () => setModalVisible(false);
+
+  const handleCreateCase = () => {
+    setCreateModalVisible(false);
+    // Aquí podrías guardar el caso en un backend o estado global
+    router.push({
+      pathname: '/crear-caso',
+      params: {
+        id: newCase.id,
+        fecha: newCase.fecha,
+        ubicacion: newCase.ubicacion,
+        tipo: newCase.tipo,
+        estado: newCase.estado,
+        nombrePolicia: newCase.nombrePolicia,
+        rango: newCase.rango,
+        unidad: newCase.unidad,
+        idOficial: newCase.idOficial,
+        resumen: newCase.resumen,
+      },
+    });
+    setNewCase({
+      id: '', fecha: '', ubicacion: '', tipo: '', estado: '', nombrePolicia: '', rango: '', unidad: '', idOficial: '', resumen: '',
+    });
+  };
 
   return (
     <GradientBackground
@@ -195,6 +233,119 @@ export default function CasosScreen() {
           </CaseCard>
         ))}
       </ScrollView>
+      {/* Botón flotante para crear caso */}
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          bottom: 32,
+          right: 32,
+          backgroundColor: '#8B5CF6',
+          borderRadius: 32,
+          width: 64,
+          height: 64,
+          justifyContent: 'center',
+          alignItems: 'center',
+          elevation: 4,
+        }}
+        onPress={() => setCreateModalVisible(true)}
+      >
+        <Ionicons name="add" size={36} color="#fff" />
+      </TouchableOpacity>
+      {/* Modal para crear caso */}
+      <Modal
+        visible={createModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCreateModalVisible(false)}
+      >
+        <ModalContainer>
+          <ModalContent style={{ alignItems: 'center' }}>
+            <ModalTitle>Crear nuevo caso</ModalTitle>
+            <TextInput
+              placeholder="ID del Caso"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.id}
+              onChangeText={text => setNewCase({ ...newCase, id: text })}
+            />
+            <TextInput
+              placeholder="Fecha del Incidente"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.fecha}
+              onChangeText={text => setNewCase({ ...newCase, fecha: text })}
+            />
+            <TextInput
+              placeholder="Ubicación"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.ubicacion}
+              onChangeText={text => setNewCase({ ...newCase, ubicacion: text })}
+            />
+            <TextInput
+              placeholder="Tipo de Caso"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.tipo}
+              onChangeText={text => setNewCase({ ...newCase, tipo: text })}
+            />
+            <TextInput
+              placeholder="Estado del Caso"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.estado}
+              onChangeText={text => setNewCase({ ...newCase, estado: text })}
+            />
+            <Text style={{ color: '#6D28D9', fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Datos del Oficial que Atendió</Text>
+            <TextInput
+              placeholder="Nombre del Policía"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.nombrePolicia}
+              onChangeText={text => setNewCase({ ...newCase, nombrePolicia: text })}
+            />
+            <TextInput
+              placeholder="Rango"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.rango}
+              onChangeText={text => setNewCase({ ...newCase, rango: text })}
+            />
+            <TextInput
+              placeholder="Unidad"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.unidad}
+              onChangeText={text => setNewCase({ ...newCase, unidad: text })}
+            />
+            <TextInput
+              placeholder="ID del Oficial"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              value={newCase.idOficial}
+              onChangeText={text => setNewCase({ ...newCase, idOficial: text })}
+            />
+            <Text style={{ color: '#6D28D9', fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Transcripción del Video de Cámara de Seguridad</Text>
+            <TextInput
+              placeholder="Resumen"
+              placeholderTextColor="#b3b3b3"
+              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 16, minHeight: 48 }}
+              value={newCase.resumen}
+              onChangeText={text => setNewCase({ ...newCase, resumen: text })}
+              multiline
+            />
+            <TouchableOpacity
+              style={{ backgroundColor: '#8B5CF6', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
+              onPress={handleCreateCase}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Confirmar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setCreateModalVisible(false)}>
+              <Text style={{ color: '#8B5CF6', fontSize: 16 }}>Cancelar</Text>
+            </TouchableOpacity>
+          </ModalContent>
+        </ModalContainer>
+      </Modal>
       <Modal visible={modalVisible} transparent animationType="fade">
         <ModalContainer>
           <ModalContent>
