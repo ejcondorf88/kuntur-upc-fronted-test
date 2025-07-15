@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
+import { useCreateCase } from '../hooks/useCreateCase';
 import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
 import { MockCase, useMockCases } from '../hooks/useMockCases';
 
@@ -168,6 +169,7 @@ export default function CasosScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   console.log('Params recibidos en /casos:', params);
+  const { createCase, loading, error, result } = useCreateCase();
 
   useEffect(() => {
     if (createModalVisible) {
@@ -199,9 +201,14 @@ export default function CasosScreen() {
   };
   const closeModal = () => setModalVisible(false);
 
-  const handleCreateCase = () => {
+  const handleCreateCase = async () => {
     setCreateModalVisible(false);
-    // Aquí podrías guardar el caso en un backend o estado global
+    try {
+      const res = await createCase(newCase);
+      console.log('Caso creado en backend:', res);
+    } catch (err) {
+      console.log('Error al crear caso en backend:', err);
+    }
     router.push({
       pathname: '/crear-caso',
       params: {
@@ -215,6 +222,8 @@ export default function CasosScreen() {
         unidad: newCase.unidad,
         idOficial: newCase.idOficial,
         resumen: newCase.resumen,
+        palabrasClave: newCase.palabrasClave,
+        hora: newCase.hora,
       },
     });
     setNewCase({
