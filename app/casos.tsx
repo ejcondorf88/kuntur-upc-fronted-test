@@ -247,7 +247,13 @@ export default function CasosScreen() {
       };
       console.log('Parte policial a enviar:', partePolicial);
       const res = await createCase(partePolicial);
-      console.log('Caso creado en backend:', res);
+      // Visualizar PDF si la respuesta es un blob (PDF)
+      if (res instanceof Blob) {
+        const pdfUrl = URL.createObjectURL(res);
+        window.open(pdfUrl, '_blank');
+      } else {
+        console.log('Caso creado en backend:', res);
+      }
     } catch (err) {
       console.log('Error al crear caso en backend:', err);
     }

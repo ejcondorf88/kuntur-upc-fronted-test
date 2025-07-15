@@ -10,5 +10,12 @@ export async function createCase(caseData: any) {
   if (!response.ok) {
     throw new Error('Error al crear el caso');
   }
-  return response.json();
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/pdf')) {
+    return await response.blob();
+  } else if (contentType && contentType.includes('application/json')) {
+    return await response.json();
+  } else {
+    return await response.text();
+  }
 } 

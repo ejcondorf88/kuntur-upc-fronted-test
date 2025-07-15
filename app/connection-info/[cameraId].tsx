@@ -144,8 +144,16 @@ export default function ConnectionInfoScreen() {
   const { cameraId, ip, location, date, time, transcription_video, key_words, cordinates, confidence_level } = useLocalSearchParams();
   const router = useRouter();
 
+  // Asegurar que ip sea string
+  const ipStr = Array.isArray(ip) ? ip[0] : ip;
+  console.log('Valor de ipStr en ConnectionInfoScreen:', ipStr);
+
   // Si recibimos la IP por parámetro, la usamos directamente
-  if (ip) {
+  if (ipStr) {
+    let streamType = 'desconocido';
+    if (ipStr.startsWith('rtsp://')) streamType = 'RTSP';
+    else if (ipStr.startsWith('http://') || ipStr.startsWith('https://')) streamType = 'HTTP(S)';
+    console.log('Tipo de stream detectado:', streamType);
     return (
       <GradientBackground
         colors={['#8B5CF6', '#3B82F6']}
@@ -171,10 +179,27 @@ export default function ConnectionInfoScreen() {
           <Ionicons name="location" size={24} color="#fff" />
           <LocationText>Quito, Solanda, 170148</LocationText>
         </LocationRow>
-        <CameraContainer style={{ height: 200 }}>
-          <WebView source={{ uri: ip as string }} style={{ flex: 1 }} />
-        </CameraContainer>
+        {/* Renderizar video según el tipo de URL */}
+        {ipStr && ipStr.startsWith('rtsp://') ? (
+          <Text style={{ color: 'red', marginLeft: 24, marginTop: 8, fontSize: 16 }}>
+            No se puede mostrar video RTSP en web. Usa una URL HTTP/HLS compatible.
+          </Text>
+        ) : ipStr && (ipStr.startsWith('http://') || ipStr.startsWith('https://')) ? (
+          <>
+            <video controls autoPlay style={{ width: '100%', height: 200, background: '#000', borderRadius: 8, margin: '0 16px' }}>
+              <source src={String(ipStr)} />
+              Tu navegador no soporta video embebido.
+            </video>
+            <div style={{ width: '100%', height: 200, margin: '0 16px', background: '#000', borderRadius: 8, marginTop: 8 }}>
+              <img src={String(ipStr)} alt="Stream MJPEG" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+          </>
+        ) : null}
         <CameraLabel>{`Cámara ${cameraId}`}</CameraLabel>
+        {/* Mostrar la IP recibida */}
+        <Text style={{ color: '#fff', marginLeft: 24, marginTop: 8, fontSize: 16 }}>
+          IP: {ipStr}
+        </Text>
         <VolumeBar>
           <Ionicons name="volume-high" size={24} color="#fff" />
           <VolumeTrack>
