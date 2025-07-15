@@ -89,12 +89,13 @@ const BottomArea = styled.View`
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const [lastMessage, setLastMessage] = useState(null);
+  const [lastMessage, setLastMessage] = useState<any>(null);
   const ws = useWebSocket('ws://127.0.0.1:8000/ws/1');
 
   useEffect(() => {
     if (ws.lastMessage) {
       setLastMessage(ws.lastMessage);
+      console.log('Notificación recibida, habilitando botón:', ws.lastMessage);
     }
   }, [ws.lastMessage]);
 
@@ -108,9 +109,18 @@ export default function HomeScreen() {
   );
 
   const handlePress = () => {
+    if (!lastMessage) return;
     router.push({
       pathname: '/connection-info/[cameraId]',
-      params: { cameraId: '1', ip: lastMessage?.ip }
+      params: {
+        cameraId: '1',
+        ip: lastMessage.ip || lastMessage.stream_url || '',
+        location: lastMessage.location || '',
+        date: lastMessage.date || '',
+        time: lastMessage.time || '',
+        transcription_video: lastMessage.transcription_video || '',
+        key_words: (lastMessage.key_words || []).join(', '),
+      }
     });
   };
 

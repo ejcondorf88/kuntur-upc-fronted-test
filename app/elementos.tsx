@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Modal, Switch, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
@@ -124,14 +124,24 @@ const SwitchLabel = styled.Text`
   margin-right: 12px;
 `;
 
+type Element = {
+  id: string;
+  nombre: string;
+  apellido: string;
+  cargo: string;
+  pnc: string;
+};
+
 export default function ElementosScreen() {
   const [showAll, setShowAll] = useState(false);
   const mockElements = useMockElements();
-  const [selectedElement, setSelectedElement] = useState(null);
+  const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
+  const params = useLocalSearchParams();
+  console.log('Params recibidos en /elementos:', params);
 
-  const handleCardPress = (el) => {
+  const handleCardPress = (el: Element) => {
     setSelectedElement(el);
     setModalVisible(true);
   };
@@ -139,9 +149,21 @@ export default function ElementosScreen() {
   const handleConfirm = () => {
     setModalVisible(false);
     if (selectedElement) {
-      router.push({ pathname: '/crear-caso', params: { nombre: selectedElement.nombre } });
+      router.push({
+        pathname: '/casos',
+        params: {
+          ip: params.ip || '',
+          location: params.location || '',
+          date: params.date || '',
+          time: params.time || '',
+          transcription_video: params.transcription_video || '',
+          key_words: params.key_words || '',
+        }
+      });
     }
   };
+
+  const locationValue = params.location || 'Ubicación no disponible';
 
   return (
     <GradientBackground
@@ -164,7 +186,7 @@ export default function ElementosScreen() {
       <MainTitle>Elementos disponibles</MainTitle>
       <LocationSelector>
         <Ionicons name="chevron-down" size={24} color="#fff" />
-        <LocationText>Solanda</LocationText>
+        <LocationText>{locationValue}</LocationText>
       </LocationSelector>
       <CardGrid>
         {mockElements.map((el) => (
@@ -201,7 +223,14 @@ export default function ElementosScreen() {
             {selectedElement && (
               <>
                 <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#6D28D9', marginBottom: 12 }}>Enviar elemento</Text>
-                <Text style={{ fontSize: 16, color: '#222', marginBottom: 24 }}>{selectedElement.nombre} {selectedElement.apellido}</Text>
+                <Text style={{ fontSize: 16, color: '#222', marginBottom: 8 }}>{selectedElement.nombre} {selectedElement.apellido}</Text>
+                {/* Mostrar la IP y otros datos recibidos por params */}
+                {params.ip && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>IP: {params.ip}</Text>}
+                {params.location && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>Ubicación: {params.location}</Text>}
+                {params.date && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>Fecha: {params.date}</Text>}
+                {params.time && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>Hora: {params.time}</Text>}
+                {params.transcription_video && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>Transcripción: {params.transcription_video}</Text>}
+                {params.key_words && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 8 }}>Palabras clave: {params.key_words}</Text>}
                 <TouchableOpacity
                   style={{ backgroundColor: '#8B5CF6', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
                   onPress={handleConfirm}

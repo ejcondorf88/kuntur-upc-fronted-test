@@ -141,7 +141,7 @@ const ActionText = styled.Text<{ color: string }>`
 `;
 
 export default function ConnectionInfoScreen() {
-  const { cameraId, ip } = useLocalSearchParams();
+  const { cameraId, ip, location, date, time, transcription_video, key_words } = useLocalSearchParams();
   const router = useRouter();
 
   // Si recibimos la IP por parámetro, la usamos directamente
@@ -179,7 +179,21 @@ export default function ConnectionInfoScreen() {
             <VolumeFill />
           </VolumeTrack>
         </VolumeBar>
-        <ActionButton color="#B9FBC0" border="#2DC653" onPress={() => router.push('/elementos')}>
+        <ActionButton color="#B9FBC0" border="#2DC653" onPress={() => {
+          const paramsToSend = {
+            ip: ip || '',
+            location: location || '',
+            date: date || '',
+            time: time || '',
+            transcription_video: transcription_video || '',
+            key_words: key_words || '',
+          };
+          console.log('Params que se envían a /elementos:', paramsToSend);
+          router.push({
+            pathname: '/elementos',
+            params: paramsToSend
+          });
+        }}>
           <ActionText color="#2DC653">&gt; Enviar elementos</ActionText>
         </ActionButton>
         <ActionButton color="#FFE5EC" border="#EF4444" onPress={() => router.back()}>

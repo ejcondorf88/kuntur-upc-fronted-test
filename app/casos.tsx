@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
 import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
@@ -162,8 +162,36 @@ export default function CasosScreen() {
     unidad: '',
     idOficial: '',
     resumen: '',
+    palabrasClave: '',
+    hora: '',
   });
   const router = useRouter();
+  const params = useLocalSearchParams();
+  console.log('Params recibidos en /casos:', params);
+
+  useEffect(() => {
+    if (createModalVisible) {
+      console.log('Autollenando modal de crear caso con:', params);
+      setNewCase((prev) => {
+        // Solo autollenar si los campos están vacíos para evitar bucles
+        const ubicacion = (typeof params.location === 'string' ? params.location : Array.isArray(params.location) ? params.location[0] : '') || prev.ubicacion;
+        const fecha = (typeof params.date === 'string' ? params.date : Array.isArray(params.date) ? params.date[0] : '') || prev.fecha;
+        const resumen = (typeof params.transcription_video === 'string' ? params.transcription_video : Array.isArray(params.transcription_video) ? params.transcription_video[0] : '') || prev.resumen;
+        const palabrasClave = (typeof params.key_words === 'string' ? params.key_words : Array.isArray(params.key_words) ? params.key_words[0] : '') || prev.palabrasClave || '';
+        const hora = (typeof params.time === 'string' ? params.time : Array.isArray(params.time) ? params.time[0] : '') || prev.hora || '';
+        return {
+          ...prev,
+          ubicacion,
+          fecha,
+          resumen,
+          palabrasClave,
+          hora,
+        };
+      });
+    }
+    // Solo ejecutar cuando se abre el modal
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createModalVisible]);
 
   const openModal = (c: MockCase) => {
     setSelectedCase(c);
@@ -190,7 +218,18 @@ export default function CasosScreen() {
       },
     });
     setNewCase({
-      id: '', fecha: '', ubicacion: '', tipo: '', estado: '', nombrePolicia: '', rango: '', unidad: '', idOficial: '', resumen: '',
+      id: '',
+      fecha: '',
+      ubicacion: '',
+      tipo: '',
+      estado: '',
+      nombrePolicia: '',
+      rango: '',
+      unidad: '',
+      idOficial: '',
+      resumen: '',
+      palabrasClave: '',
+      hora: '',
     });
   };
 
