@@ -141,10 +141,58 @@ const ActionText = styled.Text<{ color: string }>`
 `;
 
 export default function ConnectionInfoScreen() {
-  const { cameraId } = useLocalSearchParams();
-  const camera = cameraMap[cameraId as string];
+  const { cameraId, ip } = useLocalSearchParams();
   const router = useRouter();
 
+  // Si recibimos la IP por parámetro, la usamos directamente
+  if (ip) {
+    return (
+      <GradientBackground
+        colors={['#8B5CF6', '#3B82F6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Header>
+          <LogoRow>
+            <LogoImage source={require('../../assets/images/icon.png')} />
+            <TitleBlock>
+              <KunturTitle>KUNTUR</KunturTitle>
+              <Subtitle>Seguridad desde las nubes</Subtitle>
+            </TitleBlock>
+          </LogoRow>
+          <BuildingIcon>
+            <Ionicons name="business" size={40} color="#fff" />
+          </BuildingIcon>
+        </Header>
+        <MainTitle>Evento en Vivo</MainTitle>
+        <LocationRow>
+          <Ionicons name="location" size={24} color="#fff" />
+          <LocationText>Quito, Solanda, 170148</LocationText>
+        </LocationRow>
+        <CameraContainer style={{ height: 200 }}>
+          <WebView source={{ uri: ip as string }} style={{ flex: 1 }} />
+        </CameraContainer>
+        <CameraLabel>{`Cámara ${cameraId}`}</CameraLabel>
+        <VolumeBar>
+          <Ionicons name="volume-high" size={24} color="#fff" />
+          <VolumeTrack>
+            <VolumeFill />
+          </VolumeTrack>
+        </VolumeBar>
+        <ActionButton color="#B9FBC0" border="#2DC653" onPress={() => router.push('/elementos')}>
+          <ActionText color="#2DC653">&gt; Enviar elementos</ActionText>
+        </ActionButton>
+        <ActionButton color="#FFE5EC" border="#EF4444" onPress={() => router.back()}>
+          <ActionText color="#EF4444">
+            <Ionicons name="notifications" size={20} color="#EF4444" /> Falsa alarma
+          </ActionText>
+        </ActionButton>
+      </GradientBackground>
+    );
+  }
+
+  // Si no hay IP, usa el mapa estático como antes
+  const camera = cameraMap[cameraId as string];
   if (!camera) {
     return <Text style={styles.error}>Cámara no encontrada</Text>;
   }

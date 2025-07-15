@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
 import styled from 'styled-components/native';
 import { Button } from '../components/ui/Button';
@@ -88,12 +89,29 @@ const BottomArea = styled.View`
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { lastMessage } = useWebSocket('wss://tu-servidor-websocket.com/path');
-  const cameraId = lastMessage?.cameraId;
-  const isButtonEnabled = !!cameraId;
+  const [lastMessage, setLastMessage] = useState(null);
+  const ws = useWebSocket('ws://127.0.0.1:8000/ws/1');
+
+  useEffect(() => {
+    if (ws.lastMessage) {
+      setLastMessage(ws.lastMessage);
+    }
+  }, [ws.lastMessage]);
+
+  const isButtonEnabled = !!lastMessage;
+
+  // Limpia el estado al volver a la pantalla principal usando useFocusEffect
+  useFocusEffect(
+    useCallback(() => {
+      setLastMessage(null);
+    }, [])
+  );
 
   const handlePress = () => {
-    router.push('/connection-info/cam1');
+    router.push({
+      pathname: '/connection-info/[cameraId]',
+      params: { cameraId: '1', ip: lastMessage?.ip }
+    });
   };
 
   return (
@@ -127,7 +145,7 @@ export default function HomeScreen() {
             icon={<Ionicons name="notifications" size={20} color={theme.colors.error} />}
             style={{ backgroundColor: '#fff', borderColor: theme.colors.error, borderWidth: 2, width: 320 }}
             textStyle={{ color: theme.colors.error, fontWeight: 'bold', fontSize: 20 }}
-            disabled={false}
+            disabled={!isButtonEnabled}
           />
         </BottomArea>
       </GradientBackground>
