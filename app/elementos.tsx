@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Modal, Switch, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
-import { useMockElements } from '../hooks/useMockElements';
+import { usePolicias } from '../hooks/usePolicias';
 
 const GradientBackground = styled(LinearGradient)`
   flex: 1;
@@ -86,30 +86,43 @@ const CardGrid = styled.View`
 const ElementCard = styled.View`
   background-color: #f5f3ff;
   border-radius: 24px;
-  padding: 20px 18px;
+  padding: 24px 16px;
   margin: 10px;
   width: 44%;
   min-width: 160px;
-  max-width: 200px;
-  align-items: flex-start;
+  max-width: 220px;
+  align-items: center;
   elevation: 2;
+  shadow-color: #000;
+  shadow-opacity: 0.1;
+  shadow-radius: 8px;
 `;
 
 const CardRow = styled.View`
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   margin-bottom: 8px;
 `;
 
 const CardText = styled.Text`
   color: #6D28D9;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const CardSubText = styled.Text`
   color: #6D28D9;
-  font-size: 15px;
+  font-size: 14px;
+  text-align: center;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const SwitchRow = styled.View`
@@ -134,7 +147,7 @@ type Element = {
 
 export default function ElementosScreen() {
   const [showAll, setShowAll] = useState(false);
-  const mockElements = useMockElements();
+  const { policias, loading, error, page, totalPages, nextPage, prevPage } = usePolicias() as { policias: Element[]; loading: boolean; error: string | null; page: number; totalPages: number; nextPage: () => void; prevPage: () => void };
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
@@ -189,20 +202,36 @@ export default function ElementosScreen() {
         <LocationText>{locationValue}</LocationText>
       </LocationSelector>
       <CardGrid>
-        {mockElements.map((el) => (
-          <TouchableOpacity key={el.id} onPress={() => handleCardPress(el)}>
-            <ElementCard>
-              <CardRow>
-                <Ionicons name="person" size={28} color="#6D28D9" style={{ marginRight: 8 }} />
-                <View>
-                  <CardText>{el.nombre} {el.apellido}</CardText>
-                  <CardSubText>{el.cargo}  ID:{'\n'}PNC-{el.pnc}</CardSubText>
-                </View>
-              </CardRow>
-            </ElementCard>
-          </TouchableOpacity>
-        ))}
+        {loading ? (
+          <Text style={{ color: '#fff', fontSize: 18 }}>Cargando policías...</Text>
+        ) : error ? (
+          <Text style={{ color: 'red', fontSize: 18 }}>Error: {error}</Text>
+        ) : (
+          policias.map((el) => (
+            <TouchableOpacity key={el.id} onPress={() => handleCardPress(el)}>
+              <ElementCard>
+                <CardRow>
+                  <Ionicons name="person" size={28} color="#6D28D9" style={{ marginRight: 8 }} />
+                  <View>
+                    <CardText>{el.nombre} {el.apellido}</CardText>
+                    <CardSubText>{el.cargo}  ID:{'\n'}PNC-{el.pnc}</CardSubText>
+                  </View>
+                </CardRow>
+              </ElementCard>
+            </TouchableOpacity>
+          ))
+        )}
       </CardGrid>
+      {/* Controles de paginación */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12 }}>
+        <TouchableOpacity onPress={prevPage} disabled={page === 1} style={{ opacity: page === 1 ? 0.5 : 1, marginHorizontal: 16 }}>
+          <Text style={{ color: '#8B5CF6', fontSize: 18 }}>{'< Anterior'}</Text>
+        </TouchableOpacity>
+        <Text style={{ color: '#fff', fontSize: 16 }}>{`Página ${page} de ${totalPages}`}</Text>
+        <TouchableOpacity onPress={nextPage} disabled={page === totalPages} style={{ opacity: page === totalPages ? 0.5 : 1, marginHorizontal: 16 }}>
+          <Text style={{ color: '#8B5CF6', fontSize: 18 }}>{'Siguiente >'}</Text>
+        </TouchableOpacity>
+      </View>
       <SwitchRow>
         <SwitchLabel>Mostrar todos los elementos más cercanos</SwitchLabel>
         <Switch
