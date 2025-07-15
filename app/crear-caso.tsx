@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 export default function CrearCasoScreen() {
   const router = useRouter();
@@ -27,6 +27,9 @@ export default function CrearCasoScreen() {
       style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
     >
       <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '90%', maxWidth: 400, alignItems: 'center' }}>
+        <TouchableOpacity onPress={() => router.push('/')} style={{ position: 'absolute', left: 16, top: 16 }}>
+          <Image source={require('../assets/images/icon.png')} style={{ width: 40, height: 40, resizeMode: 'contain' }} />
+        </TouchableOpacity>
         <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#6D28D9', marginBottom: 12 }}>Crear caso</Text>
         <Text style={{ fontSize: 16, color: '#222', marginBottom: 8 }}>Elemento: <Text style={{ fontWeight: 'bold' }}>{nombre}</Text></Text>
         {ip && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>IP: {ip}</Text>}

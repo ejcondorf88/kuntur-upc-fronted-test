@@ -165,6 +165,7 @@ export default function CasosScreen() {
     resumen: '',
     palabrasClave: '',
     hora: '',
+    pnc: '',
   });
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -175,12 +176,14 @@ export default function CasosScreen() {
     if (createModalVisible) {
       console.log('Autollenando modal de crear caso con:', params);
       setNewCase((prev) => {
-        // Solo autollenar si los campos están vacíos para evitar bucles
         const ubicacion = (typeof params.location === 'string' ? params.location : Array.isArray(params.location) ? params.location[0] : '') || prev.ubicacion;
         const fecha = (typeof params.date === 'string' ? params.date : Array.isArray(params.date) ? params.date[0] : '') || prev.fecha;
         const resumen = (typeof params.transcription_video === 'string' ? params.transcription_video : Array.isArray(params.transcription_video) ? params.transcription_video[0] : '') || prev.resumen;
         const palabrasClave = (typeof params.key_words === 'string' ? params.key_words : Array.isArray(params.key_words) ? params.key_words[0] : '') || prev.palabrasClave || '';
         const hora = (typeof params.time === 'string' ? params.time : Array.isArray(params.time) ? params.time[0] : '') || prev.hora || '';
+        const nombrePolicia = (typeof params.nombrePolicia === 'string' ? params.nombrePolicia : Array.isArray(params.nombrePolicia) ? params.nombrePolicia[0] : '') || prev.nombrePolicia || '';
+        const rango = (typeof params.rango === 'string' ? params.rango : Array.isArray(params.rango) ? params.rango[0] : '') || prev.rango || '';
+        const pnc = (typeof params.pnc === 'string' ? params.pnc : Array.isArray(params.pnc) ? params.pnc[0] : '') || prev.pnc || '';
         return {
           ...prev,
           ubicacion,
@@ -188,6 +191,9 @@ export default function CasosScreen() {
           resumen,
           palabrasClave,
           hora,
+          nombrePolicia,
+          rango,
+          pnc,
         };
       });
     }
@@ -204,7 +210,43 @@ export default function CasosScreen() {
   const handleCreateCase = async () => {
     setCreateModalVisible(false);
     try {
-      const res = await createCase(newCase);
+      // Deserializar cordinates si es string
+      let cordinatesObj = undefined;
+      if (params.cordinates) {
+        try {
+          cordinatesObj = typeof params.cordinates === 'string' ? JSON.parse(params.cordinates) : params.cordinates;
+        } catch (e) {
+          cordinatesObj = undefined;
+        }
+      }
+      // Construir el objeto partePolicial con la información relevante
+      const partePolicial = {
+        ubicacion: params.location || newCase.ubicacion,
+        fecha: params.date || newCase.fecha,
+        hora: params.time || newCase.hora,
+        descripcion: params.transcription_video || newCase.resumen,
+        palabrasClave: params.key_words || newCase.palabrasClave,
+        nivelConfianza: params.confidence_level,
+        alerta: params.alert_information,
+        dispositivo: {
+          id: params.device_id,
+          tipo: params.device_type,
+          ip: params.ip || params.stream_url,
+        },
+        coordenadas:
+          cordinatesObj && typeof cordinatesObj === 'object' && 'latitude' in cordinatesObj && 'longitude' in cordinatesObj
+            ? {
+                lat: cordinatesObj.latitude,
+                lng: cordinatesObj.longitude,
+              }
+            : undefined,
+        duracionVideo: params.media_duration,
+        nombrePolicia: newCase.nombrePolicia,
+        rango: newCase.rango,
+        pnc: newCase.pnc,
+      };
+      console.log('Parte policial a enviar:', partePolicial);
+      const res = await createCase(partePolicial);
       console.log('Caso creado en backend:', res);
     } catch (err) {
       console.log('Error al crear caso en backend:', err);
@@ -224,6 +266,7 @@ export default function CasosScreen() {
         resumen: newCase.resumen,
         palabrasClave: newCase.palabrasClave,
         hora: newCase.hora,
+        pnc: newCase.pnc,
       },
     });
     setNewCase({
@@ -239,6 +282,7 @@ export default function CasosScreen() {
       resumen: '',
       palabrasClave: '',
       hora: '',
+      pnc: '',
     });
   };
 
@@ -250,7 +294,9 @@ export default function CasosScreen() {
     >
       <Header>
         <LogoRow>
-          <LogoImage source={require('../assets/images/icon.png')} />
+          <TouchableOpacity onPress={() => router.push('/')}>
+            <LogoImage source={require('../assets/images/icon.png')} />
+          </TouchableOpacity>
           <TitleBlock>
             <KunturTitle>KUNTUR</KunturTitle>
             <Subtitle>Seguridad desde las nubes</Subtitle>
@@ -360,18 +406,11 @@ export default function CasosScreen() {
               onChangeText={text => setNewCase({ ...newCase, rango: text })}
             />
             <TextInput
-              placeholder="Unidad"
+              placeholder="Placa (PNC)"
               placeholderTextColor="#b3b3b3"
               style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
-              value={newCase.unidad}
-              onChangeText={text => setNewCase({ ...newCase, unidad: text })}
-            />
-            <TextInput
-              placeholder="ID del Oficial"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
-              value={newCase.idOficial}
-              onChangeText={text => setNewCase({ ...newCase, idOficial: text })}
+              value={newCase.pnc}
+              onChangeText={text => setNewCase({ ...newCase, pnc: text })}
             />
             <Text style={{ color: '#6D28D9', fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Transcripción del Video de Cámara de Seguridad</Text>
             <TextInput

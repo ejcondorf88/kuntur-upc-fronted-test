@@ -165,12 +165,16 @@ export default function ElementosScreen() {
       router.push({
         pathname: '/casos',
         params: {
-          ip: params.ip || '',
           location: params.location || '',
           date: params.date || '',
           time: params.time || '',
           transcription_video: params.transcription_video || '',
           key_words: params.key_words || '',
+          nombrePolicia: `${selectedElement.nombre} ${selectedElement.apellido}`,
+          rango: selectedElement.cargo,
+          pnc: selectedElement.pnc,
+          cordinates: params.cordinates ? (typeof params.cordinates === 'string' ? params.cordinates : JSON.stringify(params.cordinates)) : undefined,
+          confidence_level: params.confidence_level || undefined,
         }
       });
     }
@@ -186,7 +190,9 @@ export default function ElementosScreen() {
     >
       <Header>
         <LogoRow>
-          <LogoImage source={require('../assets/images/icon.png')} />
+          <TouchableOpacity onPress={() => router.push('/')}>
+            <LogoImage source={require('../assets/images/icon.png')} />
+          </TouchableOpacity>
           <TitleBlock>
             <KunturTitle>KUNTUR</KunturTitle>
             <Subtitle>Seguridad desde las nubes</Subtitle>

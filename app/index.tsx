@@ -90,7 +90,7 @@ export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const [lastMessage, setLastMessage] = useState<any>(null);
-  const ws = useWebSocket('ws://127.0.0.1:8000/ws/1');
+  const ws = useWebSocket('ws://127.0.0.1:8001/ws/1');
 
   useEffect(() => {
     if (ws.lastMessage) {
@@ -120,6 +120,8 @@ export default function HomeScreen() {
         time: lastMessage.time || '',
         transcription_video: lastMessage.transcription_video || '',
         key_words: (lastMessage.key_words || []).join(', '),
+        cordinates: lastMessage.cordinates ? JSON.stringify(lastMessage.cordinates) : undefined,
+        confidence_level: lastMessage.confidence_level || undefined,
       }
     });
   };

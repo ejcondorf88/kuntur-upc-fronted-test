@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import styled from 'styled-components/native';
 
@@ -141,7 +141,7 @@ const ActionText = styled.Text<{ color: string }>`
 `;
 
 export default function ConnectionInfoScreen() {
-  const { cameraId, ip, location, date, time, transcription_video, key_words } = useLocalSearchParams();
+  const { cameraId, ip, location, date, time, transcription_video, key_words, cordinates, confidence_level } = useLocalSearchParams();
   const router = useRouter();
 
   // Si recibimos la IP por parámetro, la usamos directamente
@@ -154,7 +154,9 @@ export default function ConnectionInfoScreen() {
       >
         <Header>
           <LogoRow>
-            <LogoImage source={require('../../assets/images/icon.png')} />
+            <TouchableOpacity onPress={() => router.push('/')}>
+              <LogoImage source={require('../../assets/images/icon.png')} />
+            </TouchableOpacity>
             <TitleBlock>
               <KunturTitle>KUNTUR</KunturTitle>
               <Subtitle>Seguridad desde las nubes</Subtitle>
@@ -187,6 +189,8 @@ export default function ConnectionInfoScreen() {
             time: time || '',
             transcription_video: transcription_video || '',
             key_words: key_words || '',
+            cordinates: typeof cordinates !== 'undefined' ? (typeof cordinates === 'string' ? cordinates : JSON.stringify(cordinates)) : undefined,
+            confidence_level: typeof confidence_level !== 'undefined' ? confidence_level : undefined,
           };
           console.log('Params que se envían a /elementos:', paramsToSend);
           router.push({
@@ -219,7 +223,9 @@ export default function ConnectionInfoScreen() {
     >
       <Header>
         <LogoRow>
-          <LogoImage source={require('../../assets/images/icon.png')} />
+          <TouchableOpacity onPress={() => router.push('/')}>
+            <LogoImage source={require('../../assets/images/icon.png')} />
+          </TouchableOpacity>
           <TitleBlock>
             <KunturTitle>KUNTUR</KunturTitle>
             <Subtitle>Seguridad desde las nubes</Subtitle>
