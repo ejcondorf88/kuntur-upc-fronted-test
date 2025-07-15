@@ -1,6 +1,6 @@
 export async function createCase(caseData: any) {
   console.log('Enviando datos al backend:', caseData);
-  const response = await fetch('/api/casos', {
+  const response = await fetch('http://localhost:8001/api/ia/recibir_alerta', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
