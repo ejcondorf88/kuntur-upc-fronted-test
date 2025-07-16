@@ -96,59 +96,47 @@ const CardGrid = styled.View`
 `;
 
 const GradientCard = styled(Animated.View)<{ cardwidth: string }>`
+  flex-direction: row;
+  align-items: center;
+  background-color: #fff;
   border-radius: 28px;
-  padding: 28px 16px 20px 16px;
+  padding: 24px 20px;
   margin: 16px 12px 0 12px;
   width: ${({ cardwidth }) => cardwidth};
   max-width: 320px;
-  align-items: center;
   shadow-color: #000;
-  shadow-opacity: 0.13;
-  shadow-radius: 16px;
-  elevation: 8;
-  border-width: 1.5px;
-  border-color: #e0e7ef;
-  background-color: transparent;
+  shadow-opacity: 0.10;
+  shadow-radius: 12px;
+  elevation: 6;
+  border-width: 0;
 `;
 
 const AvatarWrapper = styled.View`
-  border-radius: 27px;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 12px rgba(33,147,176,0.18);
-  overflow: hidden;
-`;
-
-const AvatarText = styled.Text`
-  color: #fff;
-  font-size: 22px;
-  font-weight: bold;
-`;
-
-const CardRow = styled.View`
-  flex-direction: column;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background-color: #e6e9f0;
   align-items: center;
-  margin-bottom: 8px;
+  justify-content: center;
+  margin-right: 18px;
+`;
+
+const CardContent = styled.View`
+  flex: 1;
+  justify-content: center;
 `;
 
 const CardText = styled.Text`
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 17px;
-  font-weight: 600;
-  text-align: center;
-  max-width: 170px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #6c4eb6;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
 `;
 
 const CardSubText = styled.Text`
-  color: ${({ theme }) => theme.colors.secondary};
-  font-size: 14px;
-  text-align: center;
-  max-width: 170px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #6c4eb6;
+  font-size: 15px;
+  font-weight: 400;
 `;
 
 const SwitchRow = styled.View`
@@ -320,7 +308,6 @@ export default function ElementosScreen() {
           <Text style={{ color: theme.colors.error, fontSize: 18 }}>Error: {error}</Text>
         ) : (
           policias.map((el, idx) => {
-            const initials = `${el.nombre[0] || ''}${el.apellido[0] || ''}`.toUpperCase();
             const animatedValue = new Animated.Value(1);
             const appearAnim = appearAnims.current[idx] || new Animated.Value(1);
             return (
@@ -342,26 +329,13 @@ export default function ElementosScreen() {
                   }}
                 >
                   <AvatarWrapper>
-                    <LinearGradient
-                      colors={["#6dd5ed", "#2193b0"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{ width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <AvatarText>{initials}</AvatarText>
-                    </LinearGradient>
+                    <Ionicons name="person" size={28} color="#4b3c7a" />
                   </AvatarWrapper>
-                  <CardRow>
-                    <LinearGradient
-                      colors={["#f5f7fa", "#c3cfe2"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{ borderRadius: 20, padding: 0, alignItems: 'center', width: '100%' }}
-                    >
-                      <CardText>{el.nombre} {el.apellido}</CardText>
-                      <CardSubText>{el.cargo}  ID:{'\n'}PNC-{el.pnc}</CardSubText>
-                    </LinearGradient>
-                  </CardRow>
+                  <CardContent>
+                    <CardText>{el.nombre} {el.apellido}</CardText>
+                    <CardSubText>{el.cargo}  ID:
+PNC-{el.pnc}</CardSubText>
+                  </CardContent>
                 </GradientCard>
               </TouchableOpacity>
             );
