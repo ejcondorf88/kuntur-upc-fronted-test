@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import styled from 'styled-components/native';
+import { useTheme } from '../../theme/them';
 
 const cameraMap: Record<string, { ip: string; name: string }> = {
   cam1: { ip: '192.168.1.10', name: 'Cámara Kuntur 1' },
@@ -40,15 +42,15 @@ const TitleBlock = styled.View`
 `;
 
 const KunturTitle = styled.Text`
-  font-size: 32px;
-  font-weight: bold;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.h1.fontSize}px;
+  font-weight: ${({ theme }) => theme.typography.h1.fontWeight};
+  color: ${({ theme }) => theme.colors.onPrimary};
   letter-spacing: 2px;
 `;
 
 const Subtitle = styled.Text`
-  font-size: 14px;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.caption.fontSize}px;
+  color: ${({ theme }) => theme.colors.onPrimary};
   opacity: 0.7;
   margin-top: 2px;
 `;
@@ -58,14 +60,14 @@ const BuildingIcon = styled.View`
 `;
 
 const MainTitle = styled.Text`
-  font-size: 28px;
-  font-weight: bold;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.h2.fontSize}px;
+  font-weight: ${({ theme }) => theme.typography.h2.fontWeight};
+  color: ${({ theme }) => theme.colors.onPrimary};
   margin-top: 32px;
   margin-left: 24px;
   margin-bottom: 16px;
   border-left-width: 4px;
-  border-left-color: #fff;
+  border-left-color: ${({ theme }) => theme.colors.onPrimary};
   padding-left: 12px;
 `;
 
@@ -78,7 +80,7 @@ const LocationRow = styled.View`
 
 const LocationText = styled.Text`
   font-size: 18px;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.onPrimary};
   margin-left: 8px;
 `;
 
@@ -88,11 +90,11 @@ const CameraContainer = styled.View`
   border-radius: 8px;
   overflow: hidden;
   border-width: 2px;
-  border-color: #fff;
+  border-color: ${({ theme }) => theme.colors.onPrimary};
 `;
 
 const CameraLabel = styled.Text`
-  color: #fff;
+  color: ${({ theme }) => theme.colors.onPrimary};
   font-size: 16px;
   margin: 8px 0 0 8px;
 `;
@@ -100,7 +102,7 @@ const CameraLabel = styled.Text`
 const VolumeBar = styled.View`
   flex-direction: row;
   align-items: center;
-  background: #3B206A;
+  background: ${({ theme }) => theme.colors.secondary};
   border-radius: 16px;
   margin: 24px 24px 16px 24px;
   padding: 8px 16px;
@@ -110,7 +112,7 @@ const VolumeBar = styled.View`
 const VolumeTrack = styled.View`
   flex: 1;
   height: 6px;
-  background: #fff2;
+  background: ${({ theme }) => theme.colors.surfaceVariant};
   border-radius: 3px;
   margin-left: 12px;
   justify-content: center;
@@ -119,7 +121,7 @@ const VolumeTrack = styled.View`
 const VolumeFill = styled.View`
   width: 80%;
   height: 6px;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.onPrimary};
   border-radius: 3px;
 `;
 
@@ -143,10 +145,85 @@ const ActionText = styled.Text<{ color: string }>`
 export default function ConnectionInfoScreen() {
   const { cameraId, ip, location, date, time, transcription_video, key_words, cordinates, confidence_level } = useLocalSearchParams();
   const router = useRouter();
+  const theme = useTheme();
+  const [streamError, setStreamError] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   // Asegurar que ip sea string
   const ipStr = Array.isArray(ip) ? ip[0] : ip;
   console.log('Valor de ipStr en ConnectionInfoScreen:', ipStr);
+
+  // Función para manejar falsa alarma
+  const handleFalsaAlarma = () => {
+    console.log('Falsa alarma detectada - cerrando conexión al stream');
+    
+    // Detener el video si existe
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.src = '';
+      videoRef.current.load();
+    }
+    
+    // Detener la imagen MJPEG si existe
+    if (imgRef.current) {
+      imgRef.current.src = '';
+    }
+    
+    // Resetear estados
+    setStreamError(false);
+    setIsReconnecting(false);
+    setRetryCount(0);
+    
+    // Navegar de vuelta
+    router.push('/');
+  };
+
+  // Función para manejar errores del stream
+  const handleStreamError = () => {
+    setStreamError(true);
+    setIsReconnecting(true);
+    
+    // Reintentar después de 3 segundos
+    setTimeout(() => {
+      if (retryCount < 3) {
+        setRetryCount(prev => prev + 1);
+        setStreamError(false);
+        setIsReconnecting(false);
+        console.log(`Reintentando conexión al stream (intento ${retryCount + 1}/3)`);
+      }
+    }, 3000);
+  };
+
+  // Función para manejar carga exitosa del stream
+  const handleStreamLoad = () => {
+    setStreamError(false);
+    setIsReconnecting(false);
+    setRetryCount(0);
+    console.log('Stream cargado exitosamente');
+  };
+
+  // Resetear estado cuando cambia la IP
+  useEffect(() => {
+    setStreamError(false);
+    setIsReconnecting(false);
+    setRetryCount(0);
+  }, [ipStr]);
+
+  // Limpiar conexiones al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = '';
+      }
+      if (imgRef.current) {
+        imgRef.current.src = '';
+      }
+    };
+  }, []);
 
   // Si recibimos la IP por parámetro, la usamos directamente
   if (ipStr) {
@@ -156,7 +233,7 @@ export default function ConnectionInfoScreen() {
     console.log('Tipo de stream detectado:', streamType);
     return (
       <GradientBackground
-        colors={['#8B5CF6', '#3B82F6']}
+        colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
@@ -171,37 +248,85 @@ export default function ConnectionInfoScreen() {
             </TitleBlock>
           </LogoRow>
           <BuildingIcon>
-            <Ionicons name="business" size={40} color="#fff" />
+            <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
           </BuildingIcon>
         </Header>
-        <MainTitle>Evento en Vivo</MainTitle>
+        <MainTitle>Información de la conexión</MainTitle>
         <LocationRow>
-          <Ionicons name="location" size={24} color="#fff" />
+          <Ionicons name="location" size={24} color={theme.colors.onPrimary} />
           <LocationText>Quito, Solanda, 170148</LocationText>
         </LocationRow>
-        {/* Renderizar video según el tipo de URL */}
+        
+        {/* Renderizar video con manejo de errores */}
         {ipStr && ipStr.startsWith('rtsp://') ? (
           <Text style={{ color: 'red', marginLeft: 24, marginTop: 8, fontSize: 16 }}>
             No se puede mostrar video RTSP en web. Usa una URL HTTP/HLS compatible.
           </Text>
         ) : ipStr && (ipStr.startsWith('http://') || ipStr.startsWith('https://')) ? (
           <>
-            <video controls autoPlay style={{ width: '100%', height: 200, background: '#000', borderRadius: 8, margin: '0 16px' }}>
-              <source src={String(ipStr)} />
-              Tu navegador no soporta video embebido.
-            </video>
+            {/* Video con manejo de errores */}
+            <div style={{ width: '100%', height: 200, margin: '0 16px', background: '#000', borderRadius: 8, position: 'relative' }}>
+              {streamError ? (
+                <div style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  flexDirection: 'column',
+                  color: '#fff'
+                }}>
+                  <Ionicons name="warning" size={48} color="#ff6b6b" />
+                  <Text style={{ color: '#ff6b6b', marginTop: 8, fontSize: 16, textAlign: 'center' }}>
+                    Error de conexión al stream
+                  </Text>
+                  {isReconnecting && (
+                    <Text style={{ color: '#fff', marginTop: 4, fontSize: 14, textAlign: 'center' }}>
+                      Reintentando... ({retryCount}/3)
+                    </Text>
+                  )}
+                  {retryCount >= 3 && (
+                    <Text style={{ color: '#ff6b6b', marginTop: 4, fontSize: 14, textAlign: 'center' }}>
+                      No se pudo conectar después de 3 intentos
+                    </Text>
+                  )}
+                </div>
+              ) : (
+                <video 
+                  ref={videoRef}
+                  controls 
+                  autoPlay 
+                  style={{ width: '100%', height: '100%', borderRadius: 8 }}
+                  onError={handleStreamError}
+                  onLoad={handleStreamLoad}
+                >
+                  <source src={String(ipStr)} />
+                  Tu navegador no soporta video embebido.
+                </video>
+              )}
+            </div>
+            
+            {/* Imagen MJPEG como respaldo */}
             <div style={{ width: '100%', height: 200, margin: '0 16px', background: '#000', borderRadius: 8, marginTop: 8 }}>
-              <img src={String(ipStr)} alt="Stream MJPEG" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img 
+                ref={imgRef}
+                src={String(ipStr)} 
+                alt="Stream MJPEG" 
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                onError={handleStreamError}
+                onLoad={handleStreamLoad}
+              />
             </div>
           </>
         ) : null}
+        
         <CameraLabel>{`Cámara ${cameraId}`}</CameraLabel>
         {/* Mostrar la IP recibida */}
-        <Text style={{ color: '#fff', marginLeft: 24, marginTop: 8, fontSize: 16 }}>
+        <Text style={{ color: theme.colors.onPrimary, marginLeft: 24, marginTop: 8, fontSize: 16 }}>
           IP: {ipStr}
         </Text>
         <VolumeBar>
-          <Ionicons name="volume-high" size={24} color="#fff" />
+          <Ionicons name="volume-high" size={24} color={theme.colors.onPrimary} />
           <VolumeTrack>
             <VolumeFill />
           </VolumeTrack>
@@ -225,7 +350,7 @@ export default function ConnectionInfoScreen() {
         }}>
           <ActionText color="#2DC653">&gt; Enviar elementos</ActionText>
         </ActionButton>
-        <ActionButton color="#FFE5EC" border="#EF4444" onPress={() => router.back()}>
+        <ActionButton color="#FFE5EC" border="#EF4444" onPress={handleFalsaAlarma}>
           <ActionText color="#EF4444">
             <Ionicons name="notifications" size={20} color="#EF4444" /> Falsa alarma
           </ActionText>
@@ -242,7 +367,7 @@ export default function ConnectionInfoScreen() {
 
   return (
     <GradientBackground
-      colors={['#8B5CF6', '#3B82F6']}
+      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
@@ -257,12 +382,12 @@ export default function ConnectionInfoScreen() {
           </TitleBlock>
         </LogoRow>
         <BuildingIcon>
-          <Ionicons name="business" size={40} color="#fff" />
+          <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
         </BuildingIcon>
       </Header>
-      <MainTitle>Evento en Vivo</MainTitle>
+      <MainTitle>Información de la conexión</MainTitle>
       <LocationRow>
-        <Ionicons name="location" size={24} color="#fff" />
+        <Ionicons name="location" size={24} color={theme.colors.onPrimary} />
         <LocationText>Quito, Solanda, 170148</LocationText>
       </LocationRow>
       <CameraContainer style={{ height: 200 }}>
@@ -270,7 +395,7 @@ export default function ConnectionInfoScreen() {
       </CameraContainer>
       <CameraLabel>{camera.name}</CameraLabel>
       <VolumeBar>
-        <Ionicons name="volume-high" size={24} color="#fff" />
+        <Ionicons name="volume-high" size={24} color={theme.colors.onPrimary} />
         <VolumeTrack>
           <VolumeFill />
         </VolumeTrack>
@@ -278,7 +403,7 @@ export default function ConnectionInfoScreen() {
       <ActionButton color="#B9FBC0" border="#2DC653" onPress={() => router.push('/elementos')}>
         <ActionText color="#2DC653">&gt; Enviar elementos</ActionText>
       </ActionButton>
-      <ActionButton color="#FFE5EC" border="#EF4444" onPress={() => router.back()}>
+      <ActionButton color="#FFE5EC" border="#EF4444" onPress={handleFalsaAlarma}>
         <ActionText color="#EF4444">
           <Ionicons name="notifications" size={20} color="#EF4444" /> Falsa alarma
         </ActionText>

@@ -1,6 +1,8 @@
-import React from 'react';
-import { ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useRef } from 'react';
+import { Animated, ViewStyle } from 'react-native';
 import styled from 'styled-components/native';
+import { useTheme } from '../../theme/them';
 
 interface BadgeProps {
   label: string;
@@ -94,24 +96,94 @@ const BadgeText = styled.Text<{
   letter-spacing: 0.5px;
 `;
 
+const GradientBadge = styled(LinearGradient)`
+  flex: 1;
+  border-radius: ${({ theme }) => theme.radius.full}px;
+`;
+
 export const Badge: React.FC<BadgeProps> = ({
   label,
   variant = 'default',
   size = 'medium',
   style,
 }) => {
+  const theme = useTheme();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 20,
+        bounciness: 6,
+      }),
+    ]).start();
+  }, []);
+  const animatedStyle = {
+    opacity: fadeAnim,
+    transform: [{ scale: scaleAnim }],
+  };
+  // Definir colores de gradiente para cada variante
+  const getGradient = () => {
+    switch (variant) {
+      case 'success':
+        return [theme.colors.success, theme.colors.accent] as [string, string];
+      case 'warning':
+        return [theme.colors.warning, theme.colors.accent] as [string, string];
+      case 'error':
+        return [theme.colors.error, theme.colors.accent] as [string, string];
+      case 'info':
+        return [theme.colors.info, theme.colors.accent] as [string, string];
+      default:
+        return [theme.colors.textTertiary, theme.colors.surface] as [string, string];
+    }
+  };
+  if (variant !== 'default') {
+    return (
+      <Animated.View style={animatedStyle}>
+        <GradientBadge
+          colors={getGradient()}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ borderRadius: theme.radius.full }}
+        >
+          <BadgeContainer
+            variant={variant}
+            size={size}
+            style={[{ backgroundColor: 'transparent', shadowColor: theme.colors.border, shadowOpacity: 0.12, elevation: 2 }, style]}
+          >
+            <BadgeText
+              variant={variant}
+              size={size}
+              style={{ textShadowColor: '#0002', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}
+            >
+              {label}
+            </BadgeText>
+          </BadgeContainer>
+        </GradientBadge>
+      </Animated.View>
+    );
+  }
   return (
-    <BadgeContainer
-      variant={variant}
-      size={size}
-      style={style}
-    >
-      <BadgeText
+    <Animated.View style={animatedStyle}>
+      <BadgeContainer
         variant={variant}
         size={size}
+        style={style}
       >
-        {label}
-      </BadgeText>
-    </BadgeContainer>
+        <BadgeText
+          variant={variant}
+          size={size}
+        >
+          {label}
+        </BadgeText>
+      </BadgeContainer>
+    </Animated.View>
   );
 }; 

@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Modal, Switch, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
 import { usePolicias } from '../hooks/usePolicias';
+import { useTheme } from '../theme/them';
 
 const GradientBackground = styled(LinearGradient)`
   flex: 1;
@@ -34,15 +35,15 @@ const TitleBlock = styled.View`
 `;
 
 const KunturTitle = styled.Text`
-  font-size: 32px;
-  font-weight: bold;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.h1.fontSize}px;
+  font-weight: ${({ theme }) => theme.typography.h1.fontWeight};
+  color: ${({ theme }) => theme.colors.onPrimary};
   letter-spacing: 2px;
 `;
 
 const Subtitle = styled.Text`
-  font-size: 14px;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.caption.fontSize}px;
+  color: ${({ theme }) => theme.colors.onPrimary};
   opacity: 0.7;
   margin-top: 2px;
 `;
@@ -52,14 +53,14 @@ const BuildingIcon = styled.View`
 `;
 
 const MainTitle = styled.Text`
-  font-size: 28px;
-  font-weight: bold;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.h2.fontSize}px;
+  font-weight: ${({ theme }) => theme.typography.h2.fontWeight};
+  color: ${({ theme }) => theme.colors.onPrimary};
   margin-top: 32px;
   margin-left: 24px;
   margin-bottom: 16px;
   border-left-width: 4px;
-  border-left-color: #fff;
+  border-left-color: ${({ theme }) => theme.colors.onPrimary};
   padding-left: 12px;
 `;
 
@@ -73,7 +74,7 @@ const LocationSelector = styled.TouchableOpacity`
 
 const LocationText = styled.Text`
   font-size: 20px;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.onPrimary};
   margin-left: 8px;
 `;
 
@@ -84,8 +85,8 @@ const CardGrid = styled.View`
 `;
 
 const ElementCard = styled.View`
-  background-color: #f5f3ff;
-  border-radius: 24px;
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: ${({ theme }) => theme.radius.lg}px;
   padding: 24px 16px;
   margin: 10px;
   width: 44%;
@@ -93,8 +94,8 @@ const ElementCard = styled.View`
   max-width: 220px;
   align-items: center;
   elevation: 2;
-  shadow-color: #000;
-  shadow-opacity: 0.1;
+  shadow-color: ${({ theme }) => theme.colors.cardShadow};
+  shadow-opacity: 0.12;
   shadow-radius: 8px;
 `;
 
@@ -105,7 +106,7 @@ const CardRow = styled.View`
 `;
 
 const CardText = styled.Text`
-  color: #6D28D9;
+  color: ${({ theme }) => theme.colors.primary};
   font-size: 17px;
   font-weight: 600;
   text-align: center;
@@ -116,7 +117,7 @@ const CardText = styled.Text`
 `;
 
 const CardSubText = styled.Text`
-  color: #6D28D9;
+  color: ${({ theme }) => theme.colors.secondary};
   font-size: 14px;
   text-align: center;
   max-width: 170px;
@@ -132,7 +133,7 @@ const SwitchRow = styled.View`
 `;
 
 const SwitchLabel = styled.Text`
-  color: #fff;
+  color: ${({ theme }) => theme.colors.onPrimary};
   font-size: 17px;
   margin-right: 12px;
 `;
@@ -153,6 +154,7 @@ export default function ElementosScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   console.log('Params recibidos en /elementos:', params);
+  const theme = useTheme();
 
   const handleCardPress = (el: Element) => {
     setSelectedElement(el);
@@ -184,7 +186,7 @@ export default function ElementosScreen() {
 
   return (
     <GradientBackground
-      colors={['#8B5CF6', '#3B82F6']}
+      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
@@ -199,25 +201,25 @@ export default function ElementosScreen() {
           </TitleBlock>
         </LogoRow>
         <BuildingIcon>
-          <Ionicons name="business" size={40} color="#fff" />
+          <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
         </BuildingIcon>
       </Header>
       <MainTitle>Elementos disponibles</MainTitle>
       <LocationSelector>
-        <Ionicons name="chevron-down" size={24} color="#fff" />
+        <Ionicons name="chevron-down" size={24} color={theme.colors.onPrimary} />
         <LocationText>{locationValue}</LocationText>
       </LocationSelector>
       <CardGrid>
         {loading ? (
-          <Text style={{ color: '#fff', fontSize: 18 }}>Cargando policías...</Text>
+          <Text style={{ color: theme.colors.onPrimary, fontSize: 18 }}>Cargando policías...</Text>
         ) : error ? (
-          <Text style={{ color: 'red', fontSize: 18 }}>Error: {error}</Text>
+          <Text style={{ color: theme.colors.error, fontSize: 18 }}>Error: {error}</Text>
         ) : (
           policias.map((el) => (
             <TouchableOpacity key={el.id} onPress={() => handleCardPress(el)}>
               <ElementCard>
                 <CardRow>
-                  <Ionicons name="person" size={28} color="#6D28D9" style={{ marginRight: 8 }} />
+                  <Ionicons name="person" size={28} color={theme.colors.primary} style={{ marginRight: 8 }} />
                   <View>
                     <CardText>{el.nombre} {el.apellido}</CardText>
                     <CardSubText>{el.cargo}  ID:{'\n'}PNC-{el.pnc}</CardSubText>
@@ -231,11 +233,11 @@ export default function ElementosScreen() {
       {/* Controles de paginación */}
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12 }}>
         <TouchableOpacity onPress={prevPage} disabled={page === 1} style={{ opacity: page === 1 ? 0.5 : 1, marginHorizontal: 16 }}>
-          <Text style={{ color: '#8B5CF6', fontSize: 18 }}>{'< Anterior'}</Text>
+          <Text style={{ color: theme.colors.secondary, fontSize: 18 }}>{'< Anterior'}</Text>
         </TouchableOpacity>
-        <Text style={{ color: '#fff', fontSize: 16 }}>{`Página ${page} de ${totalPages}`}</Text>
+        <Text style={{ color: theme.colors.onPrimary, fontSize: 16 }}>{`Página ${page} de ${totalPages}`}</Text>
         <TouchableOpacity onPress={nextPage} disabled={page === totalPages} style={{ opacity: page === totalPages ? 0.5 : 1, marginHorizontal: 16 }}>
-          <Text style={{ color: '#8B5CF6', fontSize: 18 }}>{'Siguiente >'}</Text>
+          <Text style={{ color: theme.colors.secondary, fontSize: 18 }}>{'Siguiente >'}</Text>
         </TouchableOpacity>
       </View>
       <SwitchRow>
@@ -243,8 +245,8 @@ export default function ElementosScreen() {
         <Switch
           value={showAll}
           onValueChange={setShowAll}
-          thumbColor={showAll ? '#8B5CF6' : '#fff'}
-          trackColor={{ true: '#c4b5fd', false: '#e5e7eb' }}
+          thumbColor={showAll ? theme.colors.secondary : theme.colors.onPrimary}
+          trackColor={{ true: theme.colors.secondary + '55', false: theme.colors.surfaceVariant }}
         />
       </SwitchRow>
       <Modal
@@ -257,23 +259,23 @@ export default function ElementosScreen() {
           <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '90%', maxWidth: 400, alignItems: 'center' }}>
             {selectedElement && (
               <>
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#6D28D9', marginBottom: 12 }}>Enviar elemento</Text>
-                <Text style={{ fontSize: 16, color: '#222', marginBottom: 8 }}>{selectedElement.nombre} {selectedElement.apellido}</Text>
+                <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary, marginBottom: 12 }}>Enviar elemento</Text>
+                <Text style={{ fontSize: 16, color: theme.colors.onSurface, marginBottom: 8 }}>{selectedElement.nombre} {selectedElement.apellido}</Text>
                 {/* Mostrar la IP y otros datos recibidos por params */}
-                {params.ip && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>IP: {params.ip}</Text>}
-                {params.location && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>Ubicación: {params.location}</Text>}
-                {params.date && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>Fecha: {params.date}</Text>}
-                {params.time && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>Hora: {params.time}</Text>}
-                {params.transcription_video && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 4 }}>Transcripción: {params.transcription_video}</Text>}
-                {params.key_words && <Text style={{ fontSize: 14, color: '#6D28D9', marginBottom: 8 }}>Palabras clave: {params.key_words}</Text>}
+                {params.ip && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>IP: {params.ip}</Text>}
+                {params.location && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>Ubicación: {params.location}</Text>}
+                {params.date && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>Fecha: {params.date}</Text>}
+                {params.time && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>Hora: {params.time}</Text>}
+                {params.transcription_video && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>Transcripción: {params.transcription_video}</Text>}
+                {params.key_words && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 8 }}>Palabras clave: {params.key_words}</Text>}
                 <TouchableOpacity
-                  style={{ backgroundColor: '#8B5CF6', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
+                  style={{ backgroundColor: theme.colors.secondary, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
                   onPress={handleConfirm}
                 >
                   <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Confirmar y crear caso</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Text style={{ color: '#8B5CF6', fontSize: 16 }}>Cancelar</Text>
+                  <Text style={{ color: theme.colors.secondary, fontSize: 16 }}>Cancelar</Text>
                 </TouchableOpacity>
               </>
             )}

@@ -7,6 +7,7 @@ import styled from 'styled-components/native';
 import { useCreateCase } from '../hooks/useCreateCase';
 import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
 import { MockCase, useMockCases } from '../hooks/useMockCases';
+import { useTheme } from '../theme/them';
 
 const GradientBackground = styled(LinearGradient)`
   flex: 1;
@@ -36,15 +37,15 @@ const TitleBlock = styled.View`
 `;
 
 const KunturTitle = styled.Text`
-  font-size: 32px;
-  font-weight: bold;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.h1.fontSize}px;
+  font-weight: ${({ theme }) => theme.typography.h1.fontWeight};
+  color: ${({ theme }) => theme.colors.onPrimary};
   letter-spacing: 2px;
 `;
 
 const Subtitle = styled.Text`
-  font-size: 14px;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.caption.fontSize}px;
+  color: ${({ theme }) => theme.colors.onPrimary};
   opacity: 0.7;
   margin-top: 2px;
 `;
@@ -54,14 +55,14 @@ const BuildingIcon = styled.View`
 `;
 
 const MainTitle = styled.Text`
-  font-size: 28px;
-  font-weight: bold;
-  color: #fff;
+  font-size: ${({ theme }) => theme.typography.h2.fontSize}px;
+  font-weight: ${({ theme }) => theme.typography.h2.fontWeight};
+  color: ${({ theme }) => theme.colors.onPrimary};
   margin-top: 32px;
   margin-left: 24px;
   margin-bottom: 16px;
   border-left-width: 4px;
-  border-left-color: #fff;
+  border-left-color: ${({ theme }) => theme.colors.onPrimary};
   padding-left: 12px;
 `;
 
@@ -79,23 +80,26 @@ const FilterButton = styled.TouchableOpacity`
 `;
 
 const FilterText = styled.Text`
-  color: #fff;
+  color: ${({ theme }) => theme.colors.onPrimary};
   font-size: 20px;
   margin-left: 8px;
 `;
 
 const CaseCard = styled.TouchableOpacity`
-  background-color: #f5f3ff;
-  border-radius: 24px;
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: ${({ theme }) => theme.radius.lg}px;
   padding: 20px 18px;
   margin: 10px 16px;
   flex-direction: row;
   align-items: flex-start;
   elevation: 2;
+  shadow-color: ${({ theme }) => theme.colors.cardShadow};
+  shadow-opacity: 0.12;
+  shadow-radius: 8px;
 `;
 
 const CaseText = styled.Text`
-  color: #6D28D9;
+  color: ${({ theme }) => theme.colors.primary};
   font-size: 18px;
   font-weight: 500;
   flex: 1;
@@ -109,8 +113,8 @@ const ModalContainer = styled.View`
 `;
 
 const ModalContent = styled.View`
-  background-color: #fff;
-  border-radius: 24px;
+  background-color: ${({ theme }) => theme.colors.cardBackground};
+  border-radius: ${({ theme }) => theme.radius.lg}px;
   padding: 32px 24px;
   width: 90%;
   max-width: 400px;
@@ -119,20 +123,20 @@ const ModalContent = styled.View`
 const ModalTitle = styled.Text`
   font-size: 22px;
   font-weight: bold;
-  color: #6D28D9;
+  color: ${({ theme }) => theme.colors.secondary};
   margin-bottom: 12px;
 `;
 
 const ModalLabel = styled.Text`
   font-size: 16px;
-  color: #6D28D9;
+  color: ${({ theme }) => theme.colors.secondary};
   font-weight: bold;
   margin-top: 8px;
 `;
 
 const ModalValue = styled.Text`
   font-size: 16px;
-  color: #222;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const CloseButton = styled.TouchableOpacity`
@@ -141,12 +145,13 @@ const CloseButton = styled.TouchableOpacity`
 `;
 
 const CloseText = styled.Text`
-  color: #8B5CF6;
+  color: ${({ theme }) => theme.colors.secondary};
   font-size: 18px;
   font-weight: bold;
 `;
 
 export default function CasosScreen() {
+  const theme = useTheme();
   const cases = useMockCases();
   const [selectedCase, setSelectedCase] = useState<MockCase | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -294,7 +299,7 @@ export default function CasosScreen() {
 
   return (
     <GradientBackground
-      colors={['#8B5CF6', '#3B82F6']}
+      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
@@ -309,24 +314,24 @@ export default function CasosScreen() {
           </TitleBlock>
         </LogoRow>
         <BuildingIcon>
-          <Ionicons name="business" size={40} color="#fff" />
+          <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
         </BuildingIcon>
       </Header>
-      <MainTitle>Casos</MainTitle>
+      <MainTitle>Casos registrados</MainTitle>
       <FilterRow>
         <FilterButton>
-          <Ionicons name="chevron-down" size={20} color="#fff" />
+          <Ionicons name="chevron-down" size={20} color={theme.colors.onPrimary} />
           <FilterText>Ubicación</FilterText>
         </FilterButton>
         <FilterButton>
-          <Ionicons name="chevron-down" size={20} color="#fff" />
+          <Ionicons name="chevron-down" size={20} color={theme.colors.onPrimary} />
           <FilterText>Fecha</FilterText>
         </FilterButton>
       </FilterRow>
       <ScrollView>
         {cases.map((c) => (
           <CaseCard key={c.id} onPress={() => openModal(c)}>
-            <Ionicons name="document" size={32} color="#6D28D9" style={{ marginRight: 12, marginTop: 2 }} />
+            <Ionicons name="document" size={32} color={theme.colors.primary} style={{ marginRight: 12, marginTop: 2 }} />
             <CaseText>
               {`${c.id} | ${c.fecha} | ${c.tipo} | ${c.ubicacion} | Oficial: ${c.oficial} | Estado: ${c.estado}`}
             </CaseText>
@@ -339,7 +344,7 @@ export default function CasosScreen() {
           position: 'absolute',
           bottom: 32,
           right: 32,
-          backgroundColor: '#8B5CF6',
+          backgroundColor: theme.colors.secondary,
           borderRadius: 32,
           width: 64,
           height: 64,
@@ -349,7 +354,7 @@ export default function CasosScreen() {
         }}
         onPress={() => setCreateModalVisible(true)}
       >
-        <Ionicons name="add" size={36} color="#fff" />
+        <Ionicons name="add" size={36} color={theme.colors.onPrimary} />
       </TouchableOpacity>
       {/* Modal para crear caso */}
       <Modal
@@ -363,78 +368,78 @@ export default function CasosScreen() {
             <ModalTitle>Crear nuevo caso</ModalTitle>
             <TextInput
               placeholder="ID del Caso"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
               value={newCase.id}
               onChangeText={text => setNewCase({ ...newCase, id: text })}
             />
             <TextInput
               placeholder="Fecha del Incidente"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
               value={newCase.fecha}
               onChangeText={text => setNewCase({ ...newCase, fecha: text })}
             />
             <TextInput
               placeholder="Ubicación"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
               value={newCase.ubicacion}
               onChangeText={text => setNewCase({ ...newCase, ubicacion: text })}
             />
             <TextInput
               placeholder="Tipo de Caso"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
               value={newCase.tipo}
               onChangeText={text => setNewCase({ ...newCase, tipo: text })}
             />
             <TextInput
               placeholder="Estado del Caso"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
               value={newCase.estado}
               onChangeText={text => setNewCase({ ...newCase, estado: text })}
             />
-            <Text style={{ color: '#6D28D9', fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Datos del Oficial que Atendió</Text>
+            <Text style={{ color: theme.colors.secondary, fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Datos del Oficial que Atendió</Text>
             <TextInput
               placeholder="Nombre del Policía"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
               value={newCase.nombrePolicia}
               onChangeText={text => setNewCase({ ...newCase, nombrePolicia: text })}
             />
             <TextInput
               placeholder="Rango"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
               value={newCase.rango}
               onChangeText={text => setNewCase({ ...newCase, rango: text })}
             />
             <TextInput
               placeholder="Placa (PNC)"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
               value={newCase.pnc}
               onChangeText={text => setNewCase({ ...newCase, pnc: text })}
             />
-            <Text style={{ color: '#6D28D9', fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Transcripción del Video de Cámara de Seguridad</Text>
+            <Text style={{ color: theme.colors.secondary, fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Transcripción del Video de Cámara de Seguridad</Text>
             <TextInput
               placeholder="Resumen"
-              placeholderTextColor="#b3b3b3"
-              style={{ color: '#6D28D9', fontSize: 16, backgroundColor: '#f5f3ff', borderRadius: 12, padding: 10, width: '100%', marginBottom: 16, minHeight: 48 }}
+              placeholderTextColor={theme.colors.onSurface}
+              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 16, minHeight: 48 }}
               value={newCase.resumen}
               onChangeText={text => setNewCase({ ...newCase, resumen: text })}
               multiline
             />
             <TouchableOpacity
-              style={{ backgroundColor: '#8B5CF6', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
+              style={{ backgroundColor: theme.colors.secondary, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
               onPress={handleCreateCase}
             >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Confirmar</Text>
+              <Text style={{ color: theme.colors.onPrimary, fontWeight: 'bold', fontSize: 16 }}>Confirmar</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setCreateModalVisible(false)}>
-              <Text style={{ color: '#8B5CF6', fontSize: 16 }}>Cancelar</Text>
+              <Text style={{ color: theme.colors.secondary, fontSize: 16 }}>Cancelar</Text>
             </TouchableOpacity>
           </ModalContent>
         </ModalContainer>
@@ -458,10 +463,10 @@ export default function CasosScreen() {
                 <ModalLabel>Descripción:</ModalLabel>
                 <ModalValue>{selectedCase.descripcion}</ModalValue>
                 <TouchableOpacity
-                  style={{marginTop: 24, backgroundColor: '#8B5CF6', borderRadius: 16, paddingVertical: 12, alignItems: 'center'}}
+                  style={{marginTop: 24, backgroundColor: theme.colors.secondary, borderRadius: 16, paddingVertical: 12, alignItems: 'center'}}
                   onPress={() => selectedCase && generarParte(selectedCase)}
                 >
-                  <Text style={{color: '#fff', fontWeight: 'bold', fontSize: 16}}>Generar parte policial</Text>
+                  <Text style={{color: theme.colors.onPrimary, fontWeight: 'bold', fontSize: 16}}>Generar parte policial</Text>
                 </TouchableOpacity>
               </>
             )}
