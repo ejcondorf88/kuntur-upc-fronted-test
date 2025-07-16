@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, StatusBar } from 'react-native';
 import styled from 'styled-components/native';
+import { Header as AppHeader } from '../components/Header';
 import { Button } from '../components/ui/Button';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useTheme } from '../theme/them';
@@ -151,38 +151,25 @@ export default function HomeScreen() {
     <Container>
       <StatusBar barStyle={theme.colors.statusBarStyle} backgroundColor="transparent" translucent />
       <GradientBackground
-        colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+        colors={[theme.colors.primary, theme.colors.secondary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-          <Header>
-            <LogoRow>
-              <LogoImage source={require('../assets/images/image.png')} />
-              <TitleBlock>
-                <KunturTitle>KUNTUR</KunturTitle>
-                <Subtitle>Seguridad desde las nubes</Subtitle>
-              </TitleBlock>
-            </LogoRow>
-            <BuildingIcon>
-              <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
-            </BuildingIcon>
-          </Header>
-          <MainTitle>Alerta de Eventos</MainTitle>
-          <CenterLogo source={require('../assets/images/image.png')} />
-          <BottomArea>
-            <Button
-              title="Responder a evento"
-              onPress={handlePress}
-              variant="outline"
-              size="large"
-              icon={<Ionicons name="notifications" size={20} color={theme.colors.error} />}
-              style={{ backgroundColor: theme.colors.onPrimary, borderColor: theme.colors.error, borderWidth: 2, width: 320 }}
-              textStyle={{ color: theme.colors.error, fontWeight: 'bold', fontSize: 20 }}
-              disabled={!isButtonEnabled}
-            />
-          </BottomArea>
-        </Animated.View>
+        <AppHeader
+          title="Kuntur UPC"
+          subtitle="Sistema de monitoreo inteligente"
+        />
+        <MainTitle>Bienvenido</MainTitle>
+        <CenterLogo source={require('../assets/images/react-logo.png')} />
+        <BottomArea>
+          <Button
+            title={isButtonEnabled ? 'Ver caso detectado' : 'Esperando alerta...'}
+            onPress={handlePress}
+            disabled={!isButtonEnabled}
+            variant={isButtonEnabled ? 'primary' : 'secondary'}
+            size="large"
+          />
+        </BottomArea>
       </GradientBackground>
     </Container>
   );

@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Modal, ScrollView, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Animated, Modal, ScrollView, Text, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 import styled from 'styled-components/native';
+import { Header as AppHeader } from '../components/Header';
 import { useCreateCase } from '../hooks/useCreateCase';
 import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
 import { MockCase, useMockCases } from '../hooks/useMockCases';
@@ -11,47 +13,6 @@ import { useTheme } from '../theme/them';
 
 const GradientBackground = styled(LinearGradient)`
   flex: 1;
-`;
-
-const Header = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  margin-top: 56px;
-`;
-
-const LogoRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-`;
-
-const LogoImage = styled.Image`
-  width: 48px;
-  height: 48px;
-  resize-mode: contain;
-`;
-
-const TitleBlock = styled.View`
-  margin-left: 12px;
-`;
-
-const KunturTitle = styled.Text`
-  font-size: ${({ theme }) => theme.typography.h1.fontSize}px;
-  font-weight: ${({ theme }) => theme.typography.h1.fontWeight};
-  color: ${({ theme }) => theme.colors.onPrimary};
-  letter-spacing: 2px;
-`;
-
-const Subtitle = styled.Text`
-  font-size: ${({ theme }) => theme.typography.caption.fontSize}px;
-  color: ${({ theme }) => theme.colors.onPrimary};
-  opacity: 0.7;
-  margin-top: 2px;
-`;
-
-const BuildingIcon = styled.View`
-  margin-left: 12px;
 `;
 
 const MainTitle = styled.Text`
@@ -150,6 +111,8 @@ const CloseText = styled.Text`
   font-weight: bold;
 `;
 
+const AnimatedModalContent = Animated.createAnimatedComponent(ModalContent);
+
 export default function CasosScreen() {
   const theme = useTheme();
   const cases = useMockCases();
@@ -176,6 +139,8 @@ export default function CasosScreen() {
   const params = useLocalSearchParams();
   console.log('Params recibidos en /casos:', params);
   const { createCase, loading, error, result } = useCreateCase();
+  const [modalAnim] = useState(new Animated.Value(0));
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     if (createModalVisible) {
@@ -209,8 +174,21 @@ export default function CasosScreen() {
   const openModal = (c: MockCase) => {
     setSelectedCase(c);
     setModalVisible(true);
+    Animated.timing(modalAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
-  const closeModal = () => setModalVisible(false);
+  const closeModal = () => {
+    Animated.timing(modalAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setModalVisible(false);
+    });
+  };
 
   const handleCreateCase = async () => {
     setCreateModalVisible(false);
@@ -299,25 +277,15 @@ export default function CasosScreen() {
 
   return (
     <GradientBackground
-      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+      colors={[theme.colors.primary, theme.colors.secondary]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <Header>
-        <LogoRow>
-          <TouchableOpacity onPress={() => router.push('/')}>
-            <LogoImage source={require('../assets/images/icon.png')} />
-          </TouchableOpacity>
-          <TitleBlock>
-            <KunturTitle>KUNTUR</KunturTitle>
-            <Subtitle>Seguridad desde las nubes</Subtitle>
-          </TitleBlock>
-        </LogoRow>
-        <BuildingIcon>
-          <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
-        </BuildingIcon>
-      </Header>
-      <MainTitle>Casos registrados</MainTitle>
+      <AppHeader
+        title="Casos"
+        subtitle="Lista de casos recientes"
+      />
+      <MainTitle>Casos detectados</MainTitle>
       <FilterRow>
         <FilterButton>
           <Ionicons name="chevron-down" size={20} color={theme.colors.onPrimary} />
@@ -444,37 +412,57 @@ export default function CasosScreen() {
           </ModalContent>
         </ModalContainer>
       </Modal>
-      <Modal visible={modalVisible} transparent animationType="fade">
-        <ModalContainer>
-          <ModalContent>
-            {selectedCase && (
-              <>
-                <ModalTitle>{selectedCase.id}</ModalTitle>
-                <ModalLabel>Fecha:</ModalLabel>
-                <ModalValue>{selectedCase.fecha}</ModalValue>
-                <ModalLabel>Tipo:</ModalLabel>
-                <ModalValue>{selectedCase.tipo}</ModalValue>
-                <ModalLabel>Ubicación:</ModalLabel>
-                <ModalValue>{selectedCase.ubicacion}</ModalValue>
-                <ModalLabel>Oficial:</ModalLabel>
-                <ModalValue>{selectedCase.oficial}</ModalValue>
-                <ModalLabel>Estado:</ModalLabel>
-                <ModalValue>{selectedCase.estado}</ModalValue>
-                <ModalLabel>Descripción:</ModalLabel>
-                <ModalValue>{selectedCase.descripcion}</ModalValue>
-                <TouchableOpacity
-                  style={{marginTop: 24, backgroundColor: theme.colors.secondary, borderRadius: 16, paddingVertical: 12, alignItems: 'center'}}
-                  onPress={() => selectedCase && generarParte(selectedCase)}
-                >
-                  <Text style={{color: theme.colors.onPrimary, fontWeight: 'bold', fontSize: 16}}>Generar parte policial</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            <CloseButton onPress={closeModal}>
-              <CloseText>Cerrar</CloseText>
-            </CloseButton>
-          </ModalContent>
-        </ModalContainer>
+      <Modal visible={modalVisible} transparent animationType="none">
+        <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={{ flex: 1 }}>
+          <ModalContainer>
+            <AnimatedModalContent
+              style={{
+                opacity: modalAnim,
+                transform: [
+                  {
+                    scale: modalAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+                shadowColor: '#000',
+                shadowOpacity: 0.18,
+                shadowRadius: 24,
+                elevation: 12,
+              }}
+            >
+              <ModalTitle>Detalle del caso</ModalTitle>
+              {selectedCase && (
+                <>
+                  <ModalLabel>ID:</ModalLabel>
+                  <ModalValue>{selectedCase.id}</ModalValue>
+                  <ModalLabel>Fecha:</ModalLabel>
+                  <ModalValue>{selectedCase.fecha}</ModalValue>
+                  <ModalLabel>Tipo:</ModalLabel>
+                  <ModalValue>{selectedCase.tipo}</ModalValue>
+                  <ModalLabel>Ubicación:</ModalLabel>
+                  <ModalValue>{selectedCase.ubicacion}</ModalValue>
+                  <ModalLabel>Oficial:</ModalLabel>
+                  <ModalValue>{selectedCase.oficial}</ModalValue>
+                  <ModalLabel>Estado:</ModalLabel>
+                  <ModalValue>{selectedCase.estado}</ModalValue>
+                  <ModalLabel>Descripción:</ModalLabel>
+                  <ModalValue>{selectedCase.descripcion}</ModalValue>
+                  <TouchableOpacity
+                    style={{marginTop: 24, backgroundColor: theme.colors.secondary, borderRadius: 16, paddingVertical: 12, alignItems: 'center'}}
+                    onPress={() => selectedCase && generarParte(selectedCase)}
+                  >
+                    <Text style={{color: theme.colors.onPrimary, fontWeight: 'bold', fontSize: 16}}>Generar parte policial</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              <CloseButton onPress={closeModal}>
+                <CloseText>Cerrar</CloseText>
+              </CloseButton>
+            </AnimatedModalContent>
+          </ModalContainer>
+        </BlurView>
       </Modal>
     </GradientBackground>
   );

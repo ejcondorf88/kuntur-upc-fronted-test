@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Modal, Switch, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Dimensions, Modal, Switch, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
 import styled from 'styled-components/native';
+import { Header as AppHeader } from '../components/Header';
 import { usePolicias } from '../hooks/usePolicias';
 import { useTheme } from '../theme/them';
 
@@ -78,25 +80,48 @@ const LocationText = styled.Text`
   margin-left: 8px;
 `;
 
+const getCardWidth = () => {
+  const screenWidth = Dimensions.get('window').width;
+  if (screenWidth < 500) return '98%'; // 1 por fila
+  if (screenWidth < 900) return '46%'; // 2 por fila
+  return '30%'; // 3 por fila
+};
+
 const CardGrid = styled.View`
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-start;
+  padding-bottom: 24px;
 `;
 
-const ElementCard = styled.View`
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.radius.lg}px;
-  padding: 24px 16px;
-  margin: 10px;
-  width: 44%;
-  min-width: 160px;
-  max-width: 220px;
+const GradientCard = styled(Animated.View)<{ cardwidth: string }>`
+  border-radius: 28px;
+  padding: 28px 16px 20px 16px;
+  margin: 16px 12px 0 12px;
+  width: ${({ cardwidth }) => cardwidth};
+  max-width: 320px;
   align-items: center;
-  elevation: 2;
-  shadow-color: ${({ theme }) => theme.colors.cardShadow};
-  shadow-opacity: 0.12;
-  shadow-radius: 8px;
+  shadow-color: #000;
+  shadow-opacity: 0.13;
+  shadow-radius: 16px;
+  elevation: 8;
+  border-width: 1.5px;
+  border-color: #e0e7ef;
+  background-color: transparent;
+`;
+
+const AvatarWrapper = styled.View`
+  border-radius: 27px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(33,147,176,0.18);
+  overflow: hidden;
+`;
+
+const AvatarText = styled.Text`
+  color: #fff;
+  font-size: 22px;
+  font-weight: bold;
 `;
 
 const CardRow = styled.View`
@@ -138,6 +163,62 @@ const SwitchLabel = styled.Text`
   margin-right: 12px;
 `;
 
+const ModalContent = styled.View`
+  background-color: #fff;
+  border-radius: 24px;
+  padding: 32px;
+  width: 90%;
+  max-width: 400px;
+  align-items: center;
+  shadow-color: #000;
+  shadow-opacity: 0.18;
+  shadow-radius: 24;
+  elevation: 12;
+`;
+
+const ModalTitle = styled.Text`
+  font-size: 22px;
+  font-weight: bold;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 12px;
+`;
+
+const ModalLabel = styled.Text`
+  font-size: 16px;
+  color: ${({ theme }) => theme.colors.onSurface};
+  margin-bottom: 4px;
+  align-self: flex-start;
+`;
+
+const ModalValue = styled.Text`
+  font-size: 16px;
+  color: ${({ theme }) => theme.colors.onSurface};
+  margin-bottom: 12px;
+  text-align: left;
+  width: 100%;
+`;
+
+const CloseButton = styled.TouchableOpacity`
+  background-color: ${({ theme }) => theme.colors.secondary};
+  border-radius: 16px;
+  padding-vertical: 12px;
+  padding-horizontal: 32px;
+  margin-top: 12px;
+`;
+
+const CloseText = styled.Text`
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+`;
+
+const ModalContainer = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.4);
+`;
+
 type Element = {
   id: string;
   nombre: string;
@@ -146,19 +227,42 @@ type Element = {
   pnc: string;
 };
 
+const AnimatedModalContent = Animated.createAnimatedComponent(ModalContent);
+
 export default function ElementosScreen() {
   const [showAll, setShowAll] = useState(false);
   const { policias, loading, error, page, totalPages, nextPage, prevPage } = usePolicias() as { policias: Element[]; loading: boolean; error: string | null; page: number; totalPages: number; nextPage: () => void; prevPage: () => void };
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalAnim] = useState(new Animated.Value(0));
   const router = useRouter();
   const params = useLocalSearchParams();
   console.log('Params recibidos en /elementos:', params);
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const appearAnims = useRef<Animated.Value[]>([]);
+
+  useEffect(() => {
+    if (policias && policias.length > 0) {
+      appearAnims.current = policias.map(() => new Animated.Value(0));
+      Animated.stagger(80, appearAnims.current.map(anim =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        })
+      )).start();
+    }
+  }, [policias]);
 
   const handleCardPress = (el: Element) => {
     setSelectedElement(el);
     setModalVisible(true);
+    Animated.timing(modalAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleConfirm = () => {
@@ -182,29 +286,29 @@ export default function ElementosScreen() {
     }
   };
 
+  const handleClose = () => {
+    Animated.timing(modalAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setModalVisible(false);
+    });
+  };
+
   const locationValue = params.location || 'Ubicación no disponible';
 
   return (
     <GradientBackground
-      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+      colors={[theme.colors.primary, theme.colors.secondary]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <Header>
-        <LogoRow>
-          <TouchableOpacity onPress={() => router.push('/')}>
-            <LogoImage source={require('../assets/images/icon.png')} />
-          </TouchableOpacity>
-          <TitleBlock>
-            <KunturTitle>KUNTUR</KunturTitle>
-            <Subtitle>Seguridad desde las nubes</Subtitle>
-          </TitleBlock>
-        </LogoRow>
-        <BuildingIcon>
-          <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
-        </BuildingIcon>
-      </Header>
-      <MainTitle>Elementos disponibles</MainTitle>
+      <AppHeader
+        title="Elementos"
+        subtitle="Personal policial disponible"
+      />
+      <MainTitle>Elementos</MainTitle>
       <LocationSelector>
         <Ionicons name="chevron-down" size={24} color={theme.colors.onPrimary} />
         <LocationText>{locationValue}</LocationText>
@@ -215,19 +319,53 @@ export default function ElementosScreen() {
         ) : error ? (
           <Text style={{ color: theme.colors.error, fontSize: 18 }}>Error: {error}</Text>
         ) : (
-          policias.map((el) => (
-            <TouchableOpacity key={el.id} onPress={() => handleCardPress(el)}>
-              <ElementCard>
-                <CardRow>
-                  <Ionicons name="person" size={28} color={theme.colors.primary} style={{ marginRight: 8 }} />
-                  <View>
-                    <CardText>{el.nombre} {el.apellido}</CardText>
-                    <CardSubText>{el.cargo}  ID:{'\n'}PNC-{el.pnc}</CardSubText>
-                  </View>
-                </CardRow>
-              </ElementCard>
-            </TouchableOpacity>
-          ))
+          policias.map((el, idx) => {
+            const initials = `${el.nombre[0] || ''}${el.apellido[0] || ''}`.toUpperCase();
+            const animatedValue = new Animated.Value(1);
+            const appearAnim = appearAnims.current[idx] || new Animated.Value(1);
+            return (
+              <TouchableOpacity
+                key={el.id}
+                onPress={() => handleCardPress(el)}
+                activeOpacity={0.85}
+                onPressIn={() => Animated.spring(animatedValue, { toValue: 0.97, useNativeDriver: true }).start()}
+                onPressOut={() => Animated.spring(animatedValue, { toValue: 1, useNativeDriver: true }).start()}
+              >
+                <GradientCard
+                  cardwidth={getCardWidth()}
+                  style={{
+                    transform: [
+                      { scale: animatedValue },
+                      { translateY: appearAnim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) },
+                    ],
+                    opacity: appearAnim,
+                  }}
+                >
+                  <AvatarWrapper>
+                    <LinearGradient
+                      colors={["#6dd5ed", "#2193b0"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <AvatarText>{initials}</AvatarText>
+                    </LinearGradient>
+                  </AvatarWrapper>
+                  <CardRow>
+                    <LinearGradient
+                      colors={["#f5f7fa", "#c3cfe2"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ borderRadius: 20, padding: 0, alignItems: 'center', width: '100%' }}
+                    >
+                      <CardText>{el.nombre} {el.apellido}</CardText>
+                      <CardSubText>{el.cargo}  ID:{'\n'}PNC-{el.pnc}</CardSubText>
+                    </LinearGradient>
+                  </CardRow>
+                </GradientCard>
+              </TouchableOpacity>
+            );
+          })
         )}
       </CardGrid>
       {/* Controles de paginación */}
@@ -252,35 +390,45 @@ export default function ElementosScreen() {
       <Modal
         visible={modalVisible}
         transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
+        animationType="none"
+        onRequestClose={handleClose}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '90%', maxWidth: 400, alignItems: 'center' }}>
-            {selectedElement && (
-              <>
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary, marginBottom: 12 }}>Enviar elemento</Text>
-                <Text style={{ fontSize: 16, color: theme.colors.onSurface, marginBottom: 8 }}>{selectedElement.nombre} {selectedElement.apellido}</Text>
-                {/* Mostrar la IP y otros datos recibidos por params */}
-                {params.ip && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>IP: {params.ip}</Text>}
-                {params.location && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>Ubicación: {params.location}</Text>}
-                {params.date && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>Fecha: {params.date}</Text>}
-                {params.time && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>Hora: {params.time}</Text>}
-                {params.transcription_video && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 4 }}>Transcripción: {params.transcription_video}</Text>}
-                {params.key_words && <Text style={{ fontSize: 14, color: theme.colors.secondary, marginBottom: 8 }}>Palabras clave: {params.key_words}</Text>}
-                <TouchableOpacity
-                  style={{ backgroundColor: theme.colors.secondary, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
-                  onPress={handleConfirm}
-                >
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Confirmar y crear caso</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Text style={{ color: theme.colors.secondary, fontSize: 16 }}>Cancelar</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
+        <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={{ flex: 1 }}>
+          <ModalContainer>
+            <AnimatedModalContent
+              style={{
+                opacity: modalAnim,
+                transform: [
+                  {
+                    scale: modalAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+                shadowColor: '#000',
+                shadowOpacity: 0.18,
+                shadowRadius: 24,
+                elevation: 12,
+              }}
+            >
+              <ModalTitle>Detalle del elemento</ModalTitle>
+              {selectedElement && (
+                <>
+                  <ModalLabel>Nombre:</ModalLabel>
+                  <ModalValue>{selectedElement.nombre} {selectedElement.apellido}</ModalValue>
+                  <ModalLabel>Cargo:</ModalLabel>
+                  <ModalValue>{selectedElement.cargo}</ModalValue>
+                  <ModalLabel>PNC:</ModalLabel>
+                  <ModalValue>{selectedElement.pnc}</ModalValue>
+                </>
+              )}
+              <CloseButton onPress={handleClose}>
+                <CloseText>Cerrar</CloseText>
+              </CloseButton>
+            </AnimatedModalContent>
+          </ModalContainer>
+        </BlurView>
       </Modal>
     </GradientBackground>
   );
