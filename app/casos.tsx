@@ -3,9 +3,8 @@ import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Animated, Modal, ScrollView, Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Animated, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
-import { Button } from '../components/ui/Button';
 import { useCreateCase } from '../hooks/useCreateCase';
 import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
 import { MockCase, useMockCases } from '../hooks/useMockCases';
@@ -211,33 +210,38 @@ const StyledTextInput = styled.TextInput`
   border: 1px solid ${({ theme }) => theme.colors.onSurface}33;
 `;
 
-// Floating action button with gradient
-const FAB = styled(LinearGradient)`
+// Enhanced Floating Action Button with gradient and animation
+const FAB = styled(TouchableOpacity)`
   position: absolute;
   bottom: 32px;
   right: 32px;
-  border-radius: 32px;
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
+  border-radius: 36px;
   justify-content: center;
   align-items: center;
-  elevation: 6;
-  shadow-color: ${({ theme }) => theme.colors.cardShadow};
-  shadow-opacity: 0.4;
-  shadow-radius: 8px;
+  elevation: 10;
+  shadow-color: ${({ theme }) => theme.colors.primary};
+  shadow-opacity: 0.35;
+  shadow-radius: 14px;
+  shadow-offset: 0px 8px;
 `;
 
-const BottomArea = styled.View`
-  position: absolute;
-  left: 32px;
-  bottom: 48px;
-  align-items: flex-start;
-  padding: 0 24px;
-`;
-
-const AnimatedButton = styled(Animated.View)`
+const FABGradient = styled(LinearGradient)`
   width: 100%;
-  max-width: 320px;
+  height: 100%;
+  border-radius: 36px;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid ${({ theme }) => theme.colors.onPrimary}33;
+`;
+
+const FABText = styled.Text`
+  color: ${({ theme }) => theme.colors.onPrimary};
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 4px;
 `;
 
 export default function CasosScreen() {
@@ -256,10 +260,11 @@ export default function CasosScreen() {
   console.log('alertData recibido en casos:', alertData);
   const { createCase, loading, error, result } = useCreateCase();
   const buttonScaleAnim = React.useRef(new Animated.Value(1)).current;
+  const [loadingRequest, setLoadingRequest] = useState(false);
 
   const handleFabPress = () => {
     Animated.sequence([
-      Animated.timing(buttonScaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+      Animated.timing(buttonScaleAnim, { toValue: 0.92, duration: 100, useNativeDriver: true }),
       Animated.timing(buttonScaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
     ]).start();
     setCreateModalVisible(true);
@@ -291,6 +296,7 @@ export default function CasosScreen() {
 
   const handleCreateCase = async () => {
     setCreateModalVisible(false);
+    setLoadingRequest(true);
     try {
       let cordinatesObj = undefined;
       if (alertData.cordinates) {
@@ -327,25 +333,21 @@ export default function CasosScreen() {
         user: alertData.user || 'usuario_desconocido',
       };
       console.log('Datos que se enviarán al backend:', partePolicial);
-      console.log('Objeto final que se enviará al backend:', partePolicial);
       const res = await createCase(partePolicial);
       console.log('Respuesta del backend:', res);
-      if (res instanceof Blob) {
-        const pdfUrl = URL.createObjectURL(res);
-        window.open(pdfUrl, '_blank');
-      } else {
-        console.log('Caso creado en backend:', res);
-      }
+      setLoadingRequest(false);
+      router.push({
+        pathname: '/crear-caso',
+        params: {
+          ...params,
+          ...(typeof res === 'object' ? res : {}),
+          alertData: params.alertData,
+        },
+      });
     } catch (err) {
+      setLoadingRequest(false);
       console.log('Error al crear caso en backend:', err);
     }
-    router.push({
-      pathname: '/crear-caso',
-      params: {
-        ...params,
-        alertData: params.alertData,
-      },
-    });
     setNewCase({
       id: '',
       fecha: '',
@@ -363,6 +365,20 @@ export default function CasosScreen() {
       codigoDelito: 'a',
     });
   };
+
+  // Render the enhanced FAB
+  const renderFAB = () => (
+    <FAB onPress={handleFabPress} activeOpacity={0.8}>
+      <FABGradient
+        colors={[theme.colors.primary, theme.colors.accent + 'CC']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name="add" size={28} color={theme.colors.onPrimary} />
+        <FABText>Crear</FABText>
+      </FABGradient>
+    </FAB>
+  );
 
   return (
     <GradientBackground
@@ -405,39 +421,7 @@ export default function CasosScreen() {
           </CaseCard>
         ))}
       </ScrollView>
-      <BottomArea>
-        <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
-          <Button
-            title="Crear caso"
-            onPress={handleFabPress}
-            variant="outline"
-            size="large"
-            icon={<Ionicons name="add" size={28} color={theme.colors.secondary} />}
-            style={{
-              backgroundColor: theme.colors.primary,
-              borderColor: theme.colors.secondary,
-              borderWidth: 2,
-              borderRadius: 32,
-              paddingVertical: 16,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
-              width: 64,
-              height: 64,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-            textStyle={{
-              color: theme.colors.secondary,
-              fontWeight: 'bold',
-              fontSize: 18,
-              letterSpacing: 1,
-            }}
-          />
-        </AnimatedButton>
-      </BottomArea>
+      {renderFAB()}
       <Modal
         visible={createModalVisible}
         transparent
@@ -587,6 +571,12 @@ export default function CasosScreen() {
           </ModalContent>
         </ModalContainer>
       </Modal>
+      {loadingRequest && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}>
+          <ActivityIndicator size="large" color="#667eea" />
+          <Text style={{ color: '#fff', marginTop: 12, fontWeight: 'bold' }}>Enviando datos...</Text>
+        </View>
+      )}
     </GradientBackground>
   );
 }

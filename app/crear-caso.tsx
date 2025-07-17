@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -40,9 +40,13 @@ export default function CrearCasoScreen() {
     );
   };
 
+  console.log('params:', params);
+  console.log('params.whatsapp_link:', params.whatsapp_link);
+  const whatsappLink = Array.isArray(params.whatsapp_link) ? params.whatsapp_link[0] : params.whatsapp_link;
+
   return (
     <LinearGradient
-      colors={['#667eea', '#764ba2']}
+      colors={['#667eea', '#764ba2', '#8b5cf6']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.container}
@@ -52,30 +56,58 @@ export default function CrearCasoScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
-          {/* Header */}
-          <View style={styles.header}>
+          {/* Header con gradiente */}
+          <LinearGradient
+            colors={['#f8fafc', '#ffffff']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.header}
+          >
             <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
-              <Image 
-                source={require('../assets/images/icon.png')} 
-                style={styles.backIcon} 
-              />
+              <LinearGradient
+                colors={['#ffffff', '#f8fafc']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.backButtonGradient}
+              >
+                <Image 
+                  source={require('../assets/images/icon.png')} 
+                  style={styles.backIcon} 
+                />
+              </LinearGradient>
             </TouchableOpacity>
             <View style={styles.titleContainer}>
               <Text style={styles.title}>Crear Caso</Text>
-              <View style={styles.titleUnderline} />
+              <LinearGradient
+                colors={['#667eea', '#764ba2']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.titleUnderline}
+              />
             </View>
-          </View>
+          </LinearGradient>
 
           {/* Main Content */}
           <View style={styles.content}>
-            {/* Elemento Principal */}
-            <View style={styles.elementoContainer}>
-              <Text style={styles.elementoLabel}>Elemento</Text>
+            {/* Elemento Principal con glassmorphism */}
+            <LinearGradient
+              colors={['rgba(102, 126, 234, 0.1)', 'rgba(118, 75, 162, 0.05)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.elementoContainer}
+            >
+              <View style={styles.elementoHeader}>
+                <View style={styles.elementoIcon}>
+                  <Text style={styles.elementoIconText}>📋</Text>
+                </View>
+                <Text style={styles.elementoLabel}>Elemento Principal</Text>
+              </View>
               <Text style={styles.elementoValue}>{nombre}</Text>
-            </View>
+            </LinearGradient>
 
-            {/* Información del Caso */}
+            {/* Información del Caso con cards individuales */}
             <View style={styles.infoContainer}>
+              <Text style={styles.sectionTitle}>Información del Caso</Text>
               <InfoItem label="IP" value={ip} />
               <InfoItem label="Ubicación" value={location} />
               <InfoItem label="Fecha" value={date} />
@@ -86,8 +118,23 @@ export default function CrearCasoScreen() {
 
             {/* Justicia IA Section */}
             {showJusticiaPrompt ? (
-              <View style={styles.justiciaSection}>
+              <LinearGradient
+                colors={['#f8fafc', '#ffffff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.justiciaSection}
+              >
                 <View style={styles.justiciaHeader}>
+                  <View style={styles.justiciaIconContainer}>
+                    <LinearGradient
+                      colors={['#667eea', '#764ba2']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.justiciaIcon}
+                    >
+                      <Text style={styles.justiciaIconText}>⚖️</Text>
+                    </LinearGradient>
+                  </View>
                   <Text style={styles.justiciaTitle}>Justicia IA</Text>
                   <Text style={styles.justiciaSubtitle}>
                     ¿Desea enviar los datos para procesamiento inteligente?
@@ -101,14 +148,31 @@ export default function CrearCasoScreen() {
                     activeOpacity={0.8}
                   >
                     <LinearGradient
-                      colors={['#10B981', '#059669']}
+                      colors={['#10B981', '#059669', '#047857']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={styles.buttonGradient}
                     >
-                      <Text style={styles.primaryButtonText}>Enviar a Justicia IA</Text>
+                      <Text style={styles.primaryButtonText}>✨ Enviar a Justicia IA</Text>
                     </LinearGradient>
                   </TouchableOpacity>
+                  
+                  {whatsappLink && (
+                    <TouchableOpacity
+                      style={[styles.button, styles.whatsappButton]}
+                      onPress={() => Linking.openURL(whatsappLink)}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['#25D366', '#128C7E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.buttonGradient}
+                      >
+                        <Text style={styles.whatsappButtonText}>💬 Enviar por WhatsApp</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )}
                   
                   <TouchableOpacity
                     style={[styles.button, styles.secondaryButton]}
@@ -118,15 +182,44 @@ export default function CrearCasoScreen() {
                     <Text style={styles.secondaryButtonText}>Omitir</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </LinearGradient>
             ) : (
-              <View style={styles.successContainer}>
+              <LinearGradient
+                colors={['#f0fdf4', '#dcfce7']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.successContainer}
+              >
                 <View style={styles.successIcon}>
-                  <Text style={styles.successIconText}>✓</Text>
+                  <LinearGradient
+                    colors={['#10B981', '#059669']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.successIconGradient}
+                  >
+                    <Text style={styles.successIconText}>✓</Text>
+                  </LinearGradient>
                 </View>
                 <Text style={styles.successText}>¡Datos enviados a Justicia IA!</Text>
                 <Text style={styles.successSubtext}>El caso será procesado automáticamente</Text>
-              </View>
+                
+                {whatsappLink && (
+                  <TouchableOpacity
+                    style={styles.successWhatsappButton}
+                    onPress={() => Linking.openURL(whatsappLink)}
+                    activeOpacity={0.8}
+                  >
+                    <LinearGradient
+                      colors={['#25D366', '#128C7E']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Text style={styles.whatsappButtonText}>💬 Enviar por WhatsApp</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                )}
+              </LinearGradient>
             )}
           </View>
         </View>
@@ -147,44 +240,48 @@ const styles = {
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 28,
+    borderRadius: 32,
     width: width * 0.9,
     maxWidth: 420,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: 15,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 25,
-    elevation: 15,
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+    elevation: 20,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   header: {
     position: 'relative',
-    paddingTop: 24,
-    paddingBottom: 20,
+    paddingTop: 28,
+    paddingBottom: 24,
     paddingHorizontal: 24,
-    backgroundColor: '#f8fafc',
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: 'rgba(226, 232, 240, 0.5)',
   },
   backButton: {
     position: 'absolute',
     left: 20,
-    top: 20,
+    top: 24,
     zIndex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  backButtonGradient: {
+    padding: 10,
+    borderRadius: 16,
   },
   backIcon: {
     width: 24,
@@ -196,167 +293,289 @@ const styles = {
     marginTop: 8,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
     color: '#1e293b',
-    marginBottom: 8,
+    marginBottom: 12,
+    letterSpacing: 0.5,
   },
   titleUnderline: {
-    width: 60,
-    height: 3,
-    backgroundColor: '#667eea',
+    width: 70,
+    height: 4,
     borderRadius: 2,
   },
   content: {
     padding: 24,
   },
   elementoContainer: {
-    backgroundColor: '#f1f5f9',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#667eea',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(102, 126, 234, 0.2)',
+    shadowColor: '#667eea',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  elementoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  elementoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  elementoIconText: {
+    fontSize: 20,
   },
   elementoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#475569',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   elementoValue: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: '#1e293b',
+    letterSpacing: 0.5,
   },
   infoContainer: {
     marginBottom: 32,
   },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 20,
+    paddingLeft: 4,
+  },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    marginBottom: 8,
+    backgroundColor: 'rgba(248, 250, 252, 0.7)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.5)',
   },
   infoLabel: {
-    backgroundColor: '#e2e8f0',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginRight: 12,
-    minWidth: 80,
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginRight: 16,
+    minWidth: 90,
+    borderWidth: 1,
+    borderColor: 'rgba(102, 126, 234, 0.2)',
   },
   infoLabelText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     color: '#475569',
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#334155',
     flex: 1,
-    fontWeight: '500',
+    fontWeight: '600',
+    lineHeight: 20,
   },
   justiciaSection: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 24,
+    padding: 28,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(226, 232, 240, 0.5)',
+    shadowColor: '#667eea',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 5,
   },
   justiciaHeader: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
   },
-  justiciaTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 8,
+  justiciaIconContainer: {
+    marginBottom: 16,
   },
-  justiciaSubtitle: {
-    fontSize: 14,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  buttonContainer: {
-    gap: 12,
-  },
-  button: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  primaryButton: {
-    shadowColor: '#10B981',
+  justiciaIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#667eea',
     shadowOffset: {
       width: 0,
       height: 4,
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 4,
+  },
+  justiciaIconText: {
+    fontSize: 24,
+  },
+  justiciaTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 12,
+    letterSpacing: 0.5,
+  },
+  justiciaSubtitle: {
+    fontSize: 15,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+  buttonContainer: {
+    gap: 16,
+  },
+  button: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  primaryButton: {
+    shadowColor: '#10B981',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  whatsappButton: {
+    shadowColor: '#25D366',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   buttonGradient: {
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 32,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   primaryButtonText: {
     color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 16,
+    fontWeight: '800',
+    fontSize: 17,
+    letterSpacing: 0.5,
+  },
+  whatsappButtonText: {
+    color: '#ffffff',
+    fontWeight: '800',
+    fontSize: 17,
     letterSpacing: 0.5,
   },
   secondaryButton: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(241, 245, 249, 0.8)',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingVertical: 16,
+    borderColor: 'rgba(226, 232, 240, 0.8)',
+    paddingVertical: 18,
     paddingHorizontal: 32,
     alignItems: 'center',
+    borderRadius: 20,
   },
   secondaryButtonText: {
     color: '#64748b',
-    fontWeight: '600',
-    fontSize: 16,
+    fontWeight: '700',
+    fontSize: 17,
+    letterSpacing: 0.5,
   },
   successContainer: {
     alignItems: 'center',
-    padding: 32,
-    backgroundColor: '#f0fdf4',
-    borderRadius: 20,
+    padding: 36,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#bbf7d0',
+    borderColor: 'rgba(187, 247, 208, 0.5)',
+    shadowColor: '#10B981',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 6,
   },
   successIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#10B981',
+    marginBottom: 20,
+    borderRadius: 35,
+    overflow: 'hidden',
+    shadowColor: '#10B981',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  successIconGradient: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
   },
   successIconText: {
     color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '800',
   },
   successText: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: '#059669',
-    marginBottom: 8,
+    marginBottom: 12,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   successSubtext: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#16a34a',
     textAlign: 'center',
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  successWhatsappButton: {
+    marginTop: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#25D366',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
 };
