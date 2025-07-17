@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, ScrollView, StyleSheet } from 'react-native';
+import { Animated, Dimensions, Platform, ScrollView, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 import styled from 'styled-components/native';
 import { useTheme } from '../../theme/them';
@@ -485,43 +485,24 @@ export default function ConnectionInfoScreen() {
                 </CameraHeader>
 
                 <VideoContainer>
-                  {ipStr && ipStr.startsWith('rtsp://') ? (
-                    <ErrorContainer>
-                      <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
-                      <ErrorText>No se puede mostrar video RTSP en web</ErrorText>
-                      <RetryText>Usa una URL HTTP/HLS compatible</RetryText>
-                    </ErrorContainer>
-                  ) : ipStr && (ipStr.startsWith('http://') || ipStr.startsWith('https://')) ? (
-                    <>
-                      {streamError ? (
-                        <ErrorContainer>
-                          <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
-                          <ErrorText>Error de conexión al stream</ErrorText>
-                          {isReconnecting && (
-                            <RetryText>Reintentando... ({retryCount}/3)</RetryText>
-                          )}
-                          {retryCount >= 3 && (
-                            <RetryText>No se pudo conectar después de 3 intentos</RetryText>
-                          )}
-                        </ErrorContainer>
-                      ) : (
-                        <video 
-                          ref={videoRef}
-                          controls 
-                          autoPlay 
-                          style={{ width: '100%', height: '100%' }}
-                          onError={handleStreamError}
-                          onLoad={handleStreamLoad}
-                        >
-                          <source src={String(ipStr)} />
-                          Tu navegador no soporta video embebido.
-                        </video>
-                      )}
-                    </>
+                  {Platform.OS === 'web' ? (
+                    <video 
+                      ref={videoRef}
+                      controls 
+                      autoPlay 
+                      style={{ width: '100%', height: '100%' }}
+                      onError={handleStreamError}
+                      onLoad={handleStreamLoad}
+                    >
+                      <source src={String(ipStr)} />
+                      Tu navegador no soporta video embebido.
+                    </video>
+                  ) : ipStr ? (
+                    <WebView source={{ uri: ipStr }} style={{ flex: 1 }} />
                   ) : (
                     <ErrorContainer>
                       <Ionicons name="videocam-off-outline" size={48} color="#ff6b6b" />
-                      <ErrorText>No hay stream disponible</ErrorText>
+                      <ErrorText>No hay stream disponible (IP no definida)</ErrorText>
                     </ErrorContainer>
                   )}
                 </VideoContainer>
@@ -649,7 +630,14 @@ export default function ConnectionInfoScreen() {
               </CameraHeader>
 
               <VideoContainer>
-                <WebView source={{ uri: `http://${camera.ip}/video` }} style={{ flex: 1 }} />
+                {camera.ip ? (
+                  <WebView source={{ uri: `http://${camera.ip}/video` }} style={{ flex: 1 }} />
+                ) : (
+                  <ErrorContainer>
+                    <Ionicons name="videocam-off-outline" size={48} color="#ff6b6b" />
+                    <ErrorText>No hay stream disponible (IP no definida)</ErrorText>
+                  </ErrorContainer>
+                )}
               </VideoContainer>
 
               <StreamInfo>

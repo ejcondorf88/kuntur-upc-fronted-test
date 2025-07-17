@@ -172,7 +172,7 @@ export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const [lastMessage, setLastMessage] = useState<any>(null);
-  const ws = useWebSocket('ws://127.0.0.1:8001/ws/1');
+  const ws = useWebSocket('ws://192.168.11.100:8001/ws/1');
 
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;

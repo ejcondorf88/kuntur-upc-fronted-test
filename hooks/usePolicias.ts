@@ -9,7 +9,7 @@ export function usePolicias() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8001/api/policias/')
+    fetch('http://192.168.11.100:8001/api/policias/')
       .then((res) => res.json())
       .then((data) => {
         // Adaptar al formato de Element
