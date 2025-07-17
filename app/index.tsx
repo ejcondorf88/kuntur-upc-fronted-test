@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, StatusBar } from 'react-native';
 import styled from 'styled-components/native';
+import { Header as AppHeader } from '../components/Header';
 import { Button } from '../components/ui/Button';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useTheme } from '../theme/them';
@@ -285,77 +285,25 @@ export default function HomeScreen() {
     <Container>
       <StatusBar barStyle={theme.colors.statusBarStyle} backgroundColor="transparent" translucent />
       <GradientBackground
-        colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+        colors={[theme.colors.primary, theme.colors.secondary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-          <Header>
-            <LogoRow>
-              <LogoImage source={require('../assets/images/image.png')} />
-              <TitleBlock>
-                <KunturTitle>KUNTUR</KunturTitle>
-                <Subtitle>Seguridad desde las nubes</Subtitle>
-              </TitleBlock>
-            </LogoRow>
-            <BuildingIconContainer>
-              <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
-            </BuildingIconContainer>
-          </Header>
-
-          <MainContent>
-            <MainTitle>Sistema de Alertas</MainTitle>
-            
-            <AlertCard>
-              <CenterLogo source={require('../assets/images/image.png')} />
-              
-              <StatusIndicator active={isButtonEnabled}>
-                <StatusDot active={isButtonEnabled} />
-                <StatusText>
-                  {isButtonEnabled ? 'Evento detectado' : 'Monitoreando...'}
-                </StatusText>
-              </StatusIndicator>
-            </AlertCard>
-          </MainContent>
-
-          <BottomArea>
-            <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
-              {isButtonEnabled && (
-                <PulseAnimation style={{ transform: [{ scale: pulseAnim }] }} />
-              )}
-              <Button
-                title="Responder a Evento"
-                onPress={handlePress}
-                variant="outline"
-                size="large"
-                icon={<Ionicons 
-                  name={isButtonEnabled ? "notifications-outline" : "notifications-off-outline"} 
-                  size={22} 
-                  color={isButtonEnabled ? theme.colors.error : theme.colors.onPrimary} 
-                />}
-                style={{ 
-                  backgroundColor: isButtonEnabled ? theme.colors.onPrimary : 'rgba(255, 255, 255, 0.1)',
-                  borderColor: isButtonEnabled ? theme.colors.error : 'rgba(255, 255, 255, 0.3)',
-                  borderWidth: 2,
-                  borderRadius: 25,
-                  paddingVertical: 16,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  elevation: 8,
-                }}
-                textStyle={{ 
-                  color: isButtonEnabled ? theme.colors.error : theme.colors.onPrimary,
-                  fontWeight: 'bold',
-                  fontSize: 18,
-                  letterSpacing: 1,
-                }}
-                disabled={!isButtonEnabled}
-              />
-            </AnimatedButton>
-          </BottomArea>
-        </Animated.View>
+        <AppHeader
+          title="Kuntur UPC"
+          subtitle="Sistema de monitoreo inteligente"
+        />
+        <MainTitle>Bienvenido</MainTitle>
+        <CenterLogo source={require('../assets/images/react-logo.png')} />
+        <BottomArea>
+          <Button
+            title={isButtonEnabled ? 'Ver caso detectado' : 'Esperando alerta...'}
+            onPress={handlePress}
+            disabled={!isButtonEnabled}
+            variant={isButtonEnabled ? 'primary' : 'secondary'}
+            size="large"
+          />
+        </BottomArea>
       </GradientBackground>
     </Container>
   );
