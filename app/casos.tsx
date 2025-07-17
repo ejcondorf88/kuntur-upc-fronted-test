@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -145,9 +146,9 @@ const ModalContainer = styled.View`
 const ModalContent = styled.View`
   background-color: ${({ theme }) => theme.colors.cardBackground};
   border-radius: 16px;
-  padding: 24px;
-  width: 90%;
-  max-width: 420px;
+  padding: 16px;
+  width: 96%;
+  max-width: 340px;
   elevation: 8;
   shadow-color: ${({ theme }) => theme.colors.cardShadow};
   shadow-opacity: 0.3;
@@ -247,7 +248,7 @@ export default function CasosScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newCase, setNewCase] = useState({
-    id: '', fecha: '', ubicacion: '', tipo: '', estado: '', nombrePolicia: '', rango: '', unidad: '', idOficial: '', resumen: '', palabrasClave: '', hora: '', pnc: '',
+    id: '', fecha: '', ubicacion: '', tipo: '', estado: '', nombrePolicia: '', rango: '', unidad: '', idOficial: '', resumen: '', palabrasClave: '', hora: '', pnc: '', codigoDelito: 'a',
   });
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -274,6 +275,7 @@ export default function CasosScreen() {
         const nombrePolicia = (typeof params.nombrePolicia === 'string' ? params.nombrePolicia : Array.isArray(params.nombrePolicia) ? params.nombrePolicia[0] : '') || prev.nombrePolicia || '';
         const rango = (typeof params.rango === 'string' ? params.rango : Array.isArray(params.rango) ? params.rango[0] : '') || prev.rango || '';
         const pnc = (typeof params.pnc === 'string' ? params.pnc : Array.isArray(params.pnc) ? params.pnc[0] : '') || prev.pnc || '';
+        const codigoDelito = (typeof params.codigoDelito === 'string' ? params.codigoDelito : Array.isArray(params.codigoDelito) ? params.codigoDelito[0] : '') || prev.codigoDelito || 'a';
         return {
           ...prev,
           ubicacion,
@@ -284,6 +286,7 @@ export default function CasosScreen() {
           nombrePolicia,
           rango,
           pnc,
+          codigoDelito,
         };
       });
     }
@@ -331,9 +334,11 @@ export default function CasosScreen() {
         nombrePolicia: newCase.nombrePolicia,
         rango: newCase.rango,
         pnc: newCase.pnc,
+        codigoDelito: newCase.codigoDelito, // <-- Agregado
       };
-      console.log('Parte policial a enviar:', partePolicial);
+      console.log('Datos que se enviarán al backend:', partePolicial); // <-- Nuevo log
       const res = await createCase(partePolicial);
+      console.log('Respuesta del backend:', res); // <-- Nuevo log
       if (res instanceof Blob) {
         const pdfUrl = URL.createObjectURL(res);
         window.open(pdfUrl, '_blank');
@@ -359,6 +364,7 @@ export default function CasosScreen() {
         palabrasClave: newCase.palabrasClave,
         hora: newCase.hora,
         pnc: newCase.pnc,
+        codigoDelito: newCase.codigoDelito,
       },
     });
     setNewCase({
@@ -375,6 +381,7 @@ export default function CasosScreen() {
       palabrasClave: '',
       hora: '',
       pnc: '',
+      codigoDelito: 'a',
     });
   };
 
@@ -491,6 +498,19 @@ export default function CasosScreen() {
               value={newCase.estado}
               onChangeText={(text) => setNewCase({ ...newCase, estado: text })}
             />
+            <Text style={{ color: theme.colors.secondary, fontWeight: '600', fontSize: 15, marginTop: 10, alignSelf: 'flex-start' }}>
+              Código de delito
+            </Text>
+            <Picker
+              selectedValue={newCase.codigoDelito}
+              style={{ width: '100%', color: theme.colors.secondary, backgroundColor: theme.colors.surface + 'CC', borderRadius: 10, marginBottom: 10 }}
+              onValueChange={(itemValue) => setNewCase({ ...newCase, codigoDelito: itemValue })}
+            >
+              <Picker.Item label="A" value="a" />
+              <Picker.Item label="B" value="b" />
+              <Picker.Item label="C" value="c" />
+              <Picker.Item label="D" value="d" />
+            </Picker>
             <Text style={{ color: theme.colors.secondary, fontWeight: '600', fontSize: 16, marginTop: 12, alignSelf: 'flex-start' }}>
               Datos del Oficial que Atendió
             </Text>
