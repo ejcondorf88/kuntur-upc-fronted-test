@@ -315,9 +315,9 @@ export default function CasosScreen() {
         },
         coordenadas: cordinatesObj && typeof cordinatesObj === 'object' && 'latitude' in cordinatesObj && 'longitude' in cordinatesObj
           ? {
-              lat: cordinatesObj.latitude,
-              lng: cordinatesObj.longitude,
-            }
+            lat: cordinatesObj.latitude,
+            lng: cordinatesObj.longitude,
+          }
           : undefined,
         duracionVideo: alertData.media_duration,
         nombrePolicia: newCase.nombrePolicia,
