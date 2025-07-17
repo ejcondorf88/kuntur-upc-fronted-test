@@ -2,10 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Animated, Dimensions, ScrollView, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 import styled from 'styled-components/native';
 import { useTheme } from '../../theme/them';
+
+const { width, height } = Dimensions.get('window');
 
 const cameraMap: Record<string, { ip: string; name: string }> = {
   cam1: { ip: '192.168.1.10', name: 'Cámara Kuntur 1' },
@@ -13,6 +15,10 @@ const cameraMap: Record<string, { ip: string; name: string }> = {
   cam3: { ip: '192.168.1.12', name: 'Cámara Kuntur 3' },
   // ... agrega tus cámaras aquí
 };
+
+const Container = styled.View`
+  flex: 1;
+`;
 
 const GradientBackground = styled(LinearGradient)`
   flex: 1;
@@ -24,6 +30,7 @@ const Header = styled.View`
   justify-content: space-between;
   padding: 0 24px;
   margin-top: 56px;
+  margin-bottom: 24px;
 `;
 
 const LogoRow = styled.View`
@@ -32,114 +39,258 @@ const LogoRow = styled.View`
 `;
 
 const LogoImage = styled.Image`
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   resize-mode: contain;
+  border-radius: 26px;
+  shadow-color: #000;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.3;
+  shadow-radius: 6px;
+  elevation: 8;
 `;
 
 const TitleBlock = styled.View`
-  margin-left: 12px;
+  margin-left: 16px;
 `;
 
 const KunturTitle = styled.Text`
   font-size: ${({ theme }) => theme.typography.h1.fontSize}px;
   font-weight: ${({ theme }) => theme.typography.h1.fontWeight};
   color: ${({ theme }) => theme.colors.onPrimary};
-  letter-spacing: 2px;
+  letter-spacing: 3px;
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
 const Subtitle = styled.Text`
   font-size: ${({ theme }) => theme.typography.caption.fontSize}px;
   color: ${({ theme }) => theme.colors.onPrimary};
-  opacity: 0.7;
+  opacity: 0.85;
   margin-top: 2px;
+  font-style: italic;
+  text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
 `;
 
-const BuildingIcon = styled.View`
-  margin-left: 12px;
+const BackButton = styled.TouchableOpacity`
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 25px;
+  padding: 12px;
+  shadow-color: #000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.25;
+  shadow-radius: 4px;
+  elevation: 5;
+`;
+
+const ContentContainer = styled(ScrollView)`
+  flex: 1;
+  padding: 0 24px;
+`;
+
+const InfoCard = styled.View`
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  shadow-color: #000;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.15;
+  shadow-radius: 8px;
+  elevation: 6;
 `;
 
 const MainTitle = styled.Text`
-  font-size: ${({ theme }) => theme.typography.h2.fontSize}px;
+  font-size: ${({ theme }) => theme.typography.h2.fontSize + 2}px;
   font-weight: ${({ theme }) => theme.typography.h2.fontWeight};
   color: ${({ theme }) => theme.colors.onPrimary};
-  margin-top: 32px;
-  margin-left: 24px;
   margin-bottom: 16px;
-  border-left-width: 4px;
-  border-left-color: ${({ theme }) => theme.colors.onPrimary};
-  padding-left: 12px;
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
 const LocationRow = styled.View`
   flex-direction: row;
   align-items: center;
-  margin-left: 24px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 `;
 
 const LocationText = styled.Text`
-  font-size: 18px;
+  font-size: 16px;
   color: ${({ theme }) => theme.colors.onPrimary};
-  margin-left: 8px;
+  margin-left: 12px;
+  font-weight: 500;
 `;
 
 const CameraContainer = styled.View`
-  margin: 0 16px;
-  background: #000;
-  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 16px;
   overflow: hidden;
-  border-width: 2px;
-  border-color: ${({ theme }) => theme.colors.onPrimary};
+  margin-bottom: 24px;
+  shadow-color: #000;
+  shadow-offset: 0px 6px;
+  shadow-opacity: 0.25;
+  shadow-radius: 12px;
+  elevation: 10;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+`;
+
+const CameraHeader = styled.View`
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 `;
 
 const CameraLabel = styled.Text`
   color: ${({ theme }) => theme.colors.onPrimary};
   font-size: 16px;
-  margin: 8px 0 0 8px;
+  font-weight: bold;
+`;
+
+const StreamStatus = styled.View`
+  flex-direction: row;
+  align-items: center;
+`;
+
+interface StatusDotProps {
+  connected: boolean;
+}
+
+const StatusDot = styled.View<StatusDotProps>`
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: ${({ connected }) => connected ? '#4CAF50' : '#FF5722'};
+  margin-right: 8px;
+`;
+
+const StatusText = styled.Text`
+  color: ${({ theme }) => theme.colors.onPrimary};
+  font-size: 12px;
+  opacity: 0.8;
+`;
+
+const VideoContainer = styled.View`
+  height: 220px;
+  position: relative;
+`;
+
+const ErrorContainer = styled.View`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.8);
+`;
+
+const ErrorText = styled.Text`
+  color: #ff6b6b;
+  margin-top: 8px;
+  font-size: 16px;
+  text-align: center;
+  font-weight: 500;
+`;
+
+const RetryText = styled.Text`
+  color: ${({ theme }) => theme.colors.onPrimary};
+  margin-top: 4px;
+  font-size: 14px;
+  text-align: center;
+  opacity: 0.8;
+`;
+
+const StreamInfo = styled.View`
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const StreamText = styled.Text`
+  color: ${({ theme }) => theme.colors.onPrimary};
+  font-size: 14px;
+  opacity: 0.8;
+`;
+
+const VolumeCard = styled.View`
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  shadow-color: #000;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.15;
+  shadow-radius: 8px;
+  elevation: 6;
 `;
 
 const VolumeBar = styled.View`
   flex-direction: row;
   align-items: center;
-  background: ${({ theme }) => theme.colors.secondary};
-  border-radius: 16px;
-  margin: 24px 24px 16px 24px;
-  padding: 8px 16px;
-  elevation: 4;
 `;
 
 const VolumeTrack = styled.View`
   flex: 1;
-  height: 6px;
-  background: ${({ theme }) => theme.colors.surfaceVariant};
-  border-radius: 3px;
-  margin-left: 12px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin-left: 16px;
   justify-content: center;
 `;
 
 const VolumeFill = styled.View`
   width: 80%;
-  height: 6px;
-  background: ${({ theme }) => theme.colors.onPrimary};
-  border-radius: 3px;
+  height: 8px;
+  background-color: #4CAF50;
+  border-radius: 4px;
 `;
 
-const ActionButton = styled.TouchableOpacity<{ color: string; border: string }>`
-  background-color: ${({ color }) => color};
-  border-color: ${({ border }) => border};
+const ActionsContainer = styled.View`
+  margin-top: 12px;
+  margin-bottom: 32px;
+`;
+
+interface ActionButtonProps {
+  bgColor: string;
+  borderColor: string;
+}
+
+const ActionButton = styled.TouchableOpacity<ActionButtonProps>`
+  background-color: ${({ bgColor }) => bgColor};
+  border-color: ${({ borderColor }) => borderColor};
   border-width: 2px;
-  border-radius: 32px;
-  padding: 16px 0;
-  margin: 12px 24px 0 24px;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
   align-items: center;
-  elevation: 2;
+  flex-direction: row;
+  justify-content: center;
+  shadow-color: #000;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.2;
+  shadow-radius: 8px;
+  elevation: 6;
 `;
 
-const ActionText = styled.Text<{ color: string }>`
+interface ActionTextProps {
+  color: string;
+}
+
+const ActionText = styled.Text<ActionTextProps>`
   color: ${({ color }) => color};
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
+  margin-left: 8px;
+  letter-spacing: 0.5px;
+`;
+
+const AnimatedButton = styled(Animated.View)`
+  width: 100%;
 `;
 
 export default function ConnectionInfoScreen() {
@@ -149,8 +300,29 @@ export default function ConnectionInfoScreen() {
   const [streamError, setStreamError] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Animaciones
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const buttonScaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   // Asegurar que ip sea string
   const ipStr = Array.isArray(ip) ? ip[0] : ip;
@@ -159,6 +331,20 @@ export default function ConnectionInfoScreen() {
   // Función para manejar falsa alarma
   const handleFalsaAlarma = () => {
     console.log('Falsa alarma detectada - cerrando conexión al stream');
+    
+    // Animación de botón
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
     
     // Detener el video si existe
     if (videoRef.current) {
@@ -176,6 +362,7 @@ export default function ConnectionInfoScreen() {
     setStreamError(false);
     setIsReconnecting(false);
     setRetryCount(0);
+    setIsConnected(false);
     
     // Navegar de vuelta
     router.push('/');
@@ -185,6 +372,7 @@ export default function ConnectionInfoScreen() {
   const handleStreamError = () => {
     setStreamError(true);
     setIsReconnecting(true);
+    setIsConnected(false);
     
     // Reintentar después de 3 segundos
     setTimeout(() => {
@@ -202,7 +390,26 @@ export default function ConnectionInfoScreen() {
     setStreamError(false);
     setIsReconnecting(false);
     setRetryCount(0);
+    setIsConnected(true);
     console.log('Stream cargado exitosamente');
+  };
+
+  // Función para manejar presión de botón
+  const handleButtonPress = (action: () => void) => {
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    action();
   };
 
   // Resetear estado cuando cambia la IP
@@ -210,6 +417,7 @@ export default function ConnectionInfoScreen() {
     setStreamError(false);
     setIsReconnecting(false);
     setRetryCount(0);
+    setIsConnected(false);
   }, [ipStr]);
 
   // Limpiar conexiones al desmontar el componente
@@ -231,187 +439,264 @@ export default function ConnectionInfoScreen() {
     if (ipStr.startsWith('rtsp://')) streamType = 'RTSP';
     else if (ipStr.startsWith('http://') || ipStr.startsWith('https://')) streamType = 'HTTP(S)';
     console.log('Tipo de stream detectado:', streamType);
+    
     return (
-      <GradientBackground
-        colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Header>
-          <LogoRow>
-            <TouchableOpacity onPress={() => router.push('/')}>
-              <LogoImage source={require('../../assets/images/icon.png')} />
-            </TouchableOpacity>
-            <TitleBlock>
-              <KunturTitle>KUNTUR</KunturTitle>
-              <Subtitle>Seguridad desde las nubes</Subtitle>
-            </TitleBlock>
-          </LogoRow>
-          <BuildingIcon>
-            <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
-          </BuildingIcon>
-        </Header>
-        <MainTitle>Información de la conexión</MainTitle>
-        <LocationRow>
-          <Ionicons name="location" size={24} color={theme.colors.onPrimary} />
-          <LocationText>Quito, Solanda, 170148</LocationText>
-        </LocationRow>
-        
-        {/* Renderizar video con manejo de errores */}
-        {ipStr && ipStr.startsWith('rtsp://') ? (
-          <Text style={{ color: 'red', marginLeft: 24, marginTop: 8, fontSize: 16 }}>
-            No se puede mostrar video RTSP en web. Usa una URL HTTP/HLS compatible.
-          </Text>
-        ) : ipStr && (ipStr.startsWith('http://') || ipStr.startsWith('https://')) ? (
-          <>
-            {/* Video con manejo de errores */}
-            <div style={{ width: '100%', height: 200, margin: '0 16px', background: '#000', borderRadius: 8, position: 'relative' }}>
-              {streamError ? (
-                <div style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  flexDirection: 'column',
-                  color: '#fff'
-                }}>
-                  <Ionicons name="warning" size={48} color="#ff6b6b" />
-                  <Text style={{ color: '#ff6b6b', marginTop: 8, fontSize: 16, textAlign: 'center' }}>
-                    Error de conexión al stream
-                  </Text>
-                  {isReconnecting && (
-                    <Text style={{ color: '#fff', marginTop: 4, fontSize: 14, textAlign: 'center' }}>
-                      Reintentando... ({retryCount}/3)
-                    </Text>
+      <Container>
+        <GradientBackground
+          colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Animated.View style={{ 
+            flex: 1, 
+            opacity: fadeAnim, 
+            transform: [{ translateY: slideAnim }] 
+          }}>
+            <Header>
+              <LogoRow>
+                <BackButton onPress={() => router.push('/')}>
+                  <Ionicons name="arrow-back" size={24} color={theme.colors.onPrimary} />
+                </BackButton>
+                <TitleBlock>
+                  <KunturTitle>KUNTUR</KunturTitle>
+                  <Subtitle>Seguridad desde las nubes</Subtitle>
+                </TitleBlock>
+              </LogoRow>
+            </Header>
+
+            <ContentContainer showsVerticalScrollIndicator={false}>
+              <InfoCard>
+                <MainTitle>Información de Conexión</MainTitle>
+                <LocationRow>
+                  <Ionicons name="location-outline" size={24} color={theme.colors.onPrimary} />
+                  <LocationText>Quito, Solanda, 170148</LocationText>
+                </LocationRow>
+              </InfoCard>
+
+              <CameraContainer>
+                <CameraHeader>
+                  <CameraLabel>Cámara {cameraId}</CameraLabel>
+                  <StreamStatus>
+                    <StatusDot connected={isConnected} />
+                    <StatusText>
+                      {isConnected ? 'Conectado' : streamError ? 'Error' : 'Conectando...'}
+                    </StatusText>
+                  </StreamStatus>
+                </CameraHeader>
+
+                <VideoContainer>
+                  {ipStr && ipStr.startsWith('rtsp://') ? (
+                    <ErrorContainer>
+                      <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
+                      <ErrorText>No se puede mostrar video RTSP en web</ErrorText>
+                      <RetryText>Usa una URL HTTP/HLS compatible</RetryText>
+                    </ErrorContainer>
+                  ) : ipStr && (ipStr.startsWith('http://') || ipStr.startsWith('https://')) ? (
+                    <>
+                      {streamError ? (
+                        <ErrorContainer>
+                          <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
+                          <ErrorText>Error de conexión al stream</ErrorText>
+                          {isReconnecting && (
+                            <RetryText>Reintentando... ({retryCount}/3)</RetryText>
+                          )}
+                          {retryCount >= 3 && (
+                            <RetryText>No se pudo conectar después de 3 intentos</RetryText>
+                          )}
+                        </ErrorContainer>
+                      ) : (
+                        <video 
+                          ref={videoRef}
+                          controls 
+                          autoPlay 
+                          style={{ width: '100%', height: '100%' }}
+                          onError={handleStreamError}
+                          onLoad={handleStreamLoad}
+                        >
+                          <source src={String(ipStr)} />
+                          Tu navegador no soporta video embebido.
+                        </video>
+                      )}
+                    </>
+                  ) : (
+                    <ErrorContainer>
+                      <Ionicons name="videocam-off-outline" size={48} color="#ff6b6b" />
+                      <ErrorText>No hay stream disponible</ErrorText>
+                    </ErrorContainer>
                   )}
-                  {retryCount >= 3 && (
-                    <Text style={{ color: '#ff6b6b', marginTop: 4, fontSize: 14, textAlign: 'center' }}>
-                      No se pudo conectar después de 3 intentos
-                    </Text>
-                  )}
-                </div>
-              ) : (
-                <video 
-                  ref={videoRef}
-                  controls 
-                  autoPlay 
-                  style={{ width: '100%', height: '100%', borderRadius: 8 }}
-                  onError={handleStreamError}
-                  onLoad={handleStreamLoad}
-                >
-                  <source src={String(ipStr)} />
-                  Tu navegador no soporta video embebido.
-                </video>
-              )}
-            </div>
-            
-            {/* Imagen MJPEG como respaldo */}
-            <div style={{ width: '100%', height: 200, margin: '0 16px', background: '#000', borderRadius: 8, marginTop: 8 }}>
-              <img 
-                ref={imgRef}
-                src={String(ipStr)} 
-                alt="Stream MJPEG" 
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                onError={handleStreamError}
-                onLoad={handleStreamLoad}
-              />
-            </div>
-          </>
-        ) : null}
-        
-        <CameraLabel>{`Cámara ${cameraId}`}</CameraLabel>
-        {/* Mostrar la IP recibida */}
-        <Text style={{ color: theme.colors.onPrimary, marginLeft: 24, marginTop: 8, fontSize: 16 }}>
-          IP: {ipStr}
-        </Text>
-        <VolumeBar>
-          <Ionicons name="volume-high" size={24} color={theme.colors.onPrimary} />
-          <VolumeTrack>
-            <VolumeFill />
-          </VolumeTrack>
-        </VolumeBar>
-        <ActionButton color="#B9FBC0" border="#2DC653" onPress={() => {
-          const paramsToSend = {
-            ip: ip || '',
-            location: location || '',
-            date: date || '',
-            time: time || '',
-            transcription_video: transcription_video || '',
-            key_words: key_words || '',
-            cordinates: typeof cordinates !== 'undefined' ? (typeof cordinates === 'string' ? cordinates : JSON.stringify(cordinates)) : undefined,
-            confidence_level: typeof confidence_level !== 'undefined' ? confidence_level : undefined,
-          };
-          console.log('Params que se envían a /elementos:', paramsToSend);
-          router.push({
-            pathname: '/elementos',
-            params: paramsToSend
-          });
-        }}>
-          <ActionText color="#2DC653">&gt; Enviar elementos</ActionText>
-        </ActionButton>
-        <ActionButton color="#FFE5EC" border="#EF4444" onPress={handleFalsaAlarma}>
-          <ActionText color="#EF4444">
-            <Ionicons name="notifications" size={20} color="#EF4444" /> Falsa alarma
-          </ActionText>
-        </ActionButton>
-      </GradientBackground>
+                </VideoContainer>
+
+                <StreamInfo>
+                  <StreamText>IP: {ipStr}</StreamText>
+                  <StreamText>Tipo: {streamType}</StreamText>
+                </StreamInfo>
+              </CameraContainer>
+
+              <VolumeCard>
+                <VolumeBar>
+                  <Ionicons name="volume-high" size={24} color={theme.colors.onPrimary} />
+                  <VolumeTrack>
+                    <VolumeFill />
+                  </VolumeTrack>
+                </VolumeBar>
+              </VolumeCard>
+
+              <ActionsContainer>
+                <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                  <ActionButton 
+                    bgColor="rgba(185, 251, 192, 0.9)" 
+                    borderColor="#2DC653"
+                    onPress={() => handleButtonPress(() => {
+                      const paramsToSend = {
+                        ip: ip || '',
+                        location: location || '',
+                        date: date || '',
+                        time: time || '',
+                        transcription_video: transcription_video || '',
+                        key_words: key_words || '',
+                        cordinates: typeof cordinates !== 'undefined' ? (typeof cordinates === 'string' ? cordinates : JSON.stringify(cordinates)) : undefined,
+                        confidence_level: typeof confidence_level !== 'undefined' ? confidence_level : undefined,
+                      };
+                      console.log('Params que se envían a /elementos:', paramsToSend);
+                      router.push({
+                        pathname: '/elementos',
+                        params: paramsToSend
+                      });
+                    })}
+                  >
+                    <Ionicons name="send" size={20} color="#2DC653" />
+                    <ActionText color="#2DC653">Enviar Elementos</ActionText>
+                  </ActionButton>
+                </AnimatedButton>
+
+                <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                  <ActionButton 
+                    bgColor="rgba(255, 229, 236, 0.9)" 
+                    borderColor="#EF4444"
+                    onPress={() => handleButtonPress(handleFalsaAlarma)}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#EF4444" />
+                    <ActionText color="#EF4444">Falsa Alarma</ActionText>
+                  </ActionButton>
+                </AnimatedButton>
+              </ActionsContainer>
+            </ContentContainer>
+          </Animated.View>
+        </GradientBackground>
+      </Container>
     );
   }
 
   // Si no hay IP, usa el mapa estático como antes
   const camera = cameraMap[cameraId as string];
   if (!camera) {
-    return <Text style={styles.error}>Cámara no encontrada</Text>;
+    return (
+      <Container>
+        <GradientBackground
+          colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <ErrorContainer>
+            <Ionicons name="camera-outline" size={64} color="#ff6b6b" />
+            <ErrorText style={{ fontSize: 18, marginTop: 16 }}>Cámara no encontrada</ErrorText>
+          </ErrorContainer>
+        </GradientBackground>
+      </Container>
+    );
   }
 
   return (
-    <GradientBackground
-      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
-      <Header>
-        <LogoRow>
-          <TouchableOpacity onPress={() => router.push('/')}>
-            <LogoImage source={require('../../assets/images/icon.png')} />
-          </TouchableOpacity>
-          <TitleBlock>
-            <KunturTitle>KUNTUR</KunturTitle>
-            <Subtitle>Seguridad desde las nubes</Subtitle>
-          </TitleBlock>
-        </LogoRow>
-        <BuildingIcon>
-          <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
-        </BuildingIcon>
-      </Header>
-      <MainTitle>Información de la conexión</MainTitle>
-      <LocationRow>
-        <Ionicons name="location" size={24} color={theme.colors.onPrimary} />
-        <LocationText>Quito, Solanda, 170148</LocationText>
-      </LocationRow>
-      <CameraContainer style={{ height: 200 }}>
-        <WebView source={{ uri: `http://${camera.ip}/video` }} style={{ flex: 1 }} />
-      </CameraContainer>
-      <CameraLabel>{camera.name}</CameraLabel>
-      <VolumeBar>
-        <Ionicons name="volume-high" size={24} color={theme.colors.onPrimary} />
-        <VolumeTrack>
-          <VolumeFill />
-        </VolumeTrack>
-      </VolumeBar>
-      <ActionButton color="#B9FBC0" border="#2DC653" onPress={() => router.push('/elementos')}>
-        <ActionText color="#2DC653">&gt; Enviar elementos</ActionText>
-      </ActionButton>
-      <ActionButton color="#FFE5EC" border="#EF4444" onPress={handleFalsaAlarma}>
-        <ActionText color="#EF4444">
-          <Ionicons name="notifications" size={20} color="#EF4444" /> Falsa alarma
-        </ActionText>
-      </ActionButton>
-    </GradientBackground>
+    <Container>
+      <GradientBackground
+        colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Animated.View style={{ 
+          flex: 1, 
+          opacity: fadeAnim, 
+          transform: [{ translateY: slideAnim }] 
+        }}>
+          <Header>
+            <LogoRow>
+              <BackButton onPress={() => router.push('/')}>
+                <Ionicons name="arrow-back" size={24} color={theme.colors.onPrimary} />
+              </BackButton>
+              <TitleBlock>
+                <KunturTitle>KUNTUR</KunturTitle>
+                <Subtitle>Seguridad desde las nubes</Subtitle>
+              </TitleBlock>
+            </LogoRow>
+          </Header>
+
+          <ContentContainer showsVerticalScrollIndicator={false}>
+            <InfoCard>
+              <MainTitle>Información de Conexión</MainTitle>
+              <LocationRow>
+                <Ionicons name="location-outline" size={24} color={theme.colors.onPrimary} />
+                <LocationText>Quito, Solanda, 170148</LocationText>
+              </LocationRow>
+            </InfoCard>
+
+            <CameraContainer>
+              <CameraHeader>
+                <CameraLabel>{camera.name}</CameraLabel>
+                <StreamStatus>
+                  <StatusDot connected={true} />
+                  <StatusText>Conectado</StatusText>
+                </StreamStatus>
+              </CameraHeader>
+
+              <VideoContainer>
+                <WebView source={{ uri: `http://${camera.ip}/video` }} style={{ flex: 1 }} />
+              </VideoContainer>
+
+              <StreamInfo>
+                <StreamText>IP: {camera.ip}</StreamText>
+                <StreamText>Tipo: WebView</StreamText>
+              </StreamInfo>
+            </CameraContainer>
+
+            <VolumeCard>
+              <VolumeBar>
+                <Ionicons name="volume-high" size={24} color={theme.colors.onPrimary} />
+                <VolumeTrack>
+                  <VolumeFill />
+                </VolumeTrack>
+              </VolumeBar>
+            </VolumeCard>
+
+            <ActionsContainer>
+              <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                <ActionButton 
+                  bgColor="rgba(185, 251, 192, 0.9)" 
+                  borderColor="#2DC653"
+                  onPress={() => handleButtonPress(() => router.push('/elementos'))}
+                >
+                  <Ionicons name="send" size={20} color="#2DC653" />
+                  <ActionText color="#2DC653">Enviar Elementos</ActionText>
+                </ActionButton>
+              </AnimatedButton>
+
+              <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
+                <ActionButton 
+                  bgColor="rgba(255, 229, 236, 0.9)" 
+                  borderColor="#EF4444"
+                  onPress={() => handleButtonPress(handleFalsaAlarma)}
+                >
+                  <Ionicons name="close-circle" size={20} color="#EF4444" />
+                  <ActionText color="#EF4444">Falsa Alarma</ActionText>
+                </ActionButton>
+              </AnimatedButton>
+            </ActionsContainer>
+          </ContentContainer>
+        </Animated.View>
+      </GradientBackground>
+    </Container>
   );
 }
 
 const styles = StyleSheet.create({
   error: { color: 'red', fontSize: 18, margin: 32, textAlign: 'center' },
-}); 
+});

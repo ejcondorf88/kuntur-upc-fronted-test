@@ -11,104 +11,177 @@ import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
 import { MockCase, useMockCases } from '../hooks/useMockCases';
 import { useTheme } from '../theme/them';
 
+// Gradient background with softer colors
 const GradientBackground = styled(LinearGradient)`
   flex: 1;
+  padding: 16px;
 `;
 
 const MainTitle = styled.Text`
   font-size: ${({ theme }) => theme.typography.h2.fontSize}px;
-  font-weight: ${({ theme }) => theme.typography.h2.fontWeight};
+  font-weight: 600;
   color: ${({ theme }) => theme.colors.onPrimary};
-  margin-top: 32px;
-  margin-left: 24px;
-  margin-bottom: 16px;
+  margin: 32px 24px 24px;
+  padding-left: 16px;
   border-left-width: 4px;
-  border-left-color: ${({ theme }) => theme.colors.onPrimary};
-  padding-left: 12px;
+  border-left-color: ${({ theme }) => theme.colors.accent};
+  line-height: 32px;
 `;
 
+// Filter row with improved spacing
 const FilterRow = styled.View`
   flex-direction: row;
   justify-content: flex-start;
   margin-left: 24px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 `;
 
+// Filter button with hover-like effect
 const FilterButton = styled.TouchableOpacity`
   flex-direction: row;
   align-items: center;
-  margin-right: 32px;
+  margin-right: 24px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.surface}20;
 `;
 
+// Filter text with refined typography
 const FilterText = styled.Text`
   color: ${({ theme }) => theme.colors.onPrimary};
-  font-size: 20px;
+  font-size: 18px;
+  font-weight: 500;
   margin-left: 8px;
 `;
 
+// Case card with modern design
 const CaseCard = styled.TouchableOpacity`
   background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: ${({ theme }) => theme.radius.lg}px;
-  padding: 20px 18px;
-  margin: 10px 16px;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 8px 16px;
   flex-direction: row;
-  align-items: flex-start;
-  elevation: 2;
+  align-items: center;
+  elevation: 4;
   shadow-color: ${({ theme }) => theme.colors.cardShadow};
-  shadow-opacity: 0.12;
+  shadow-opacity: 0.2;
   shadow-radius: 8px;
+  shadow-offset: 0px 4px;
 `;
 
+// Case text with improved readability
 const CaseText = styled.Text`
   color: ${({ theme }) => theme.colors.primary};
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
   flex: 1;
+  line-height: 24px;
 `;
 
+// Modal container with semi-transparent background
 const ModalContainer = styled.View`
   flex: 1;
-  background-color: rgba(0,0,0,0.4);
+  background-color: rgba(0, 0, 0, 0.5);
   justify-content: center;
   align-items: center;
 `;
 
+// Modal content with modern styling
 const ModalContent = styled.View`
   background-color: ${({ theme }) => theme.colors.cardBackground};
-  border-radius: ${({ theme }) => theme.radius.lg}px;
-  padding: 32px 24px;
+  border-radius: 16px;
+  padding: 24px;
   width: 90%;
-  max-width: 400px;
+  max-width: 420px;
+  elevation: 8;
+  shadow-color: ${({ theme }) => theme.colors.cardShadow};
+  shadow-opacity: 0.3;
+  shadow-radius: 12px;
 `;
 
+// Modal title with bold typography
 const ModalTitle = styled.Text`
-  font-size: 22px;
-  font-weight: bold;
+  font-size: 24px;
+  font-weight: 700;
   color: ${({ theme }) => theme.colors.secondary};
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  text-align: center;
 `;
 
+// Modal label with consistent styling
 const ModalLabel = styled.Text`
   font-size: 16px;
+  font-weight: 600;
   color: ${({ theme }) => theme.colors.secondary};
-  font-weight: bold;
-  margin-top: 8px;
+  margin-top: 12px;
 `;
 
+// Modal value with readable text
 const ModalValue = styled.Text`
   font-size: 16px;
   color: ${({ theme }) => theme.colors.text};
+  line-height: 24px;
 `;
 
+// Gradient button container
+const GradientButton = styled(LinearGradient)`
+  border-radius: 12px;
+  padding: 2px;
+  margin-top: 24px;
+`;
+
+// Close button with modern styling
 const CloseButton = styled.TouchableOpacity`
   margin-top: 24px;
   align-self: flex-end;
 `;
 
+// Close text with bold typography
 const CloseText = styled.Text`
   color: ${({ theme }) => theme.colors.secondary};
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 16px;
+  font-weight: 600;
+`;
+
+// Input field with modern styling
+const StyledTextInput = styled.TextInput`
+  color: ${({ theme }) => theme.colors.secondary};
+  font-size: 16px;
+  background-color: ${({ theme }) => theme.colors.surface}CC;
+  border-radius: 12px;
+  padding: 12px;
+  width: 100%;
+  margin-bottom: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.onSurface}33;
+`;
+
+// Floating action button with gradient
+const FAB = styled(LinearGradient)`
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  border-radius: 32px;
+  width: 64px;
+  height: 64px;
+  justify-content: center;
+  align-items: center;
+  elevation: 6;
+  shadow-color: ${({ theme }) => theme.colors.cardShadow};
+  shadow-opacity: 0.4;
+  shadow-radius: 8px;
+`;
+
+const BottomArea = styled.View`
+  position: absolute;
+  left: 32px;
+  bottom: 48px;
+  align-items: flex-start;
+  padding: 0 24px;
+`;
+
+const AnimatedButton = styled(Animated.View)`
+  width: 100%;
+  max-width: 320px;
 `;
 
 const AnimatedModalContent = Animated.createAnimatedComponent(ModalContent);
@@ -116,28 +189,15 @@ const AnimatedModalContent = Animated.createAnimatedComponent(ModalContent);
 export default function CasosScreen() {
   const theme = useTheme();
   const cases = useMockCases();
+  const { generarParte } = useGeneratePartePolicial();
   const [selectedCase, setSelectedCase] = useState<MockCase | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const { generarParte } = useGeneratePartePolicial();
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newCase, setNewCase] = useState({
-    id: '',
-    fecha: '',
-    ubicacion: '',
-    tipo: '',
-    estado: '',
-    nombrePolicia: '',
-    rango: '',
-    unidad: '',
-    idOficial: '',
-    resumen: '',
-    palabrasClave: '',
-    hora: '',
-    pnc: '',
+    id: '', fecha: '', ubicacion: '', tipo: '', estado: '', nombrePolicia: '', rango: '', unidad: '', idOficial: '', resumen: '', palabrasClave: '', hora: '', pnc: '',
   });
   const router = useRouter();
   const params = useLocalSearchParams();
-  console.log('Params recibidos en /casos:', params);
   const { createCase, loading, error, result } = useCreateCase();
   const [modalAnim] = useState(new Animated.Value(0));
   const colorScheme = useColorScheme();
@@ -167,9 +227,7 @@ export default function CasosScreen() {
         };
       });
     }
-    // Solo ejecutar cuando se abre el modal
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createModalVisible]);
+  }, [createModalVisible, params]);
 
   const openModal = (c: MockCase) => {
     setSelectedCase(c);
@@ -193,7 +251,6 @@ export default function CasosScreen() {
   const handleCreateCase = async () => {
     setCreateModalVisible(false);
     try {
-      // Deserializar cordinates si es string
       let cordinatesObj = undefined;
       if (params.cordinates) {
         try {
@@ -202,7 +259,6 @@ export default function CasosScreen() {
           cordinatesObj = undefined;
         }
       }
-      // Construir el objeto partePolicial con la información relevante
       const partePolicial = {
         ubicacion: params.location || newCase.ubicacion,
         fecha: params.date || newCase.fecha,
@@ -230,7 +286,6 @@ export default function CasosScreen() {
       };
       console.log('Parte policial a enviar:', partePolicial);
       const res = await createCase(partePolicial);
-      // Visualizar PDF si la respuesta es un blob (PDF)
       if (res instanceof Blob) {
         const pdfUrl = URL.createObjectURL(res);
         window.open(pdfUrl, '_blank');
@@ -288,43 +343,57 @@ export default function CasosScreen() {
       <MainTitle>Casos detectados</MainTitle>
       <FilterRow>
         <FilterButton>
-          <Ionicons name="chevron-down" size={20} color={theme.colors.onPrimary} />
+          <Ionicons name="chevron-down" size={18} color={theme.colors.onPrimary} />
           <FilterText>Ubicación</FilterText>
         </FilterButton>
         <FilterButton>
-          <Ionicons name="chevron-down" size={20} color={theme.colors.onPrimary} />
+          <Ionicons name="chevron-down" size={18} color={theme.colors.onPrimary} />
           <FilterText>Fecha</FilterText>
         </FilterButton>
       </FilterRow>
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 120 }}>
         {cases.map((c) => (
           <CaseCard key={c.id} onPress={() => openModal(c)}>
-            <Ionicons name="document" size={32} color={theme.colors.primary} style={{ marginRight: 12, marginTop: 2 }} />
+            <Ionicons name="document" size={28} color={theme.colors.primary} style={{ marginRight: 12, marginTop: 4 }} />
             <CaseText>
               {`${c.id} | ${c.fecha} | ${c.tipo} | ${c.ubicacion} | Oficial: ${c.oficial} | Estado: ${c.estado}`}
             </CaseText>
           </CaseCard>
         ))}
       </ScrollView>
-      {/* Botón flotante para crear caso */}
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          bottom: 32,
-          right: 32,
-          backgroundColor: theme.colors.secondary,
-          borderRadius: 32,
-          width: 64,
-          height: 64,
-          justifyContent: 'center',
-          alignItems: 'center',
-          elevation: 4,
-        }}
-        onPress={() => setCreateModalVisible(true)}
-      >
-        <Ionicons name="add" size={36} color={theme.colors.onPrimary} />
-      </TouchableOpacity>
-      {/* Modal para crear caso */}
+      <BottomArea>
+        <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
+          <Button
+            title="Crear caso"
+            onPress={handleFabPress}
+            variant="outline"
+            size="large"
+            icon={<Ionicons name="add" size={28} color={theme.colors.secondary} />}
+            style={{
+              backgroundColor: theme.colors.primary,
+              borderColor: theme.colors.secondary,
+              borderWidth: 2,
+              borderRadius: 32,
+              paddingVertical: 16,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+              width: 64,
+              height: 64,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            textStyle={{
+              color: theme.colors.secondary,
+              fontWeight: 'bold',
+              fontSize: 18,
+              letterSpacing: 1,
+            }}
+          />
+        </AnimatedButton>
+      </BottomArea>
       <Modal
         visible={createModalVisible}
         transparent
@@ -332,83 +401,87 @@ export default function CasosScreen() {
         onRequestClose={() => setCreateModalVisible(false)}
       >
         <ModalContainer>
-          <ModalContent style={{ alignItems: 'center' }}>
+          <ModalContent>
             <ModalTitle>Crear nuevo caso</ModalTitle>
-            <TextInput
+            <StyledTextInput
               placeholder="ID del Caso"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.id}
-              onChangeText={text => setNewCase({ ...newCase, id: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, id: text })}
             />
-            <TextInput
+            <StyledTextInput
               placeholder="Fecha del Incidente"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.fecha}
-              onChangeText={text => setNewCase({ ...newCase, fecha: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, fecha: text })}
             />
-            <TextInput
+            <StyledTextInput
               placeholder="Ubicación"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.ubicacion}
-              onChangeText={text => setNewCase({ ...newCase, ubicacion: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, ubicacion: text })}
             />
-            <TextInput
+            <StyledTextInput
               placeholder="Tipo de Caso"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.tipo}
-              onChangeText={text => setNewCase({ ...newCase, tipo: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, tipo: text })}
             />
-            <TextInput
+            <StyledTextInput
               placeholder="Estado del Caso"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.estado}
-              onChangeText={text => setNewCase({ ...newCase, estado: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, estado: text })}
             />
-            <Text style={{ color: theme.colors.secondary, fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Datos del Oficial que Atendió</Text>
-            <TextInput
+            <Text style={{ color: theme.colors.secondary, fontWeight: '600', fontSize: 16, marginTop: 12, alignSelf: 'flex-start' }}>
+              Datos del Oficial que Atendió
+            </Text>
+            <StyledTextInput
               placeholder="Nombre del Policía"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.nombrePolicia}
-              onChangeText={text => setNewCase({ ...newCase, nombrePolicia: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, nombrePolicia: text })}
             />
-            <TextInput
+            <StyledTextInput
               placeholder="Rango"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.rango}
-              onChangeText={text => setNewCase({ ...newCase, rango: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, rango: text })}
             />
-            <TextInput
+            <StyledTextInput
               placeholder="Placa (PNC)"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 8 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.pnc}
-              onChangeText={text => setNewCase({ ...newCase, pnc: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, pnc: text })}
             />
-            <Text style={{ color: theme.colors.secondary, fontWeight: 'bold', fontSize: 16, marginTop: 8, alignSelf: 'flex-start' }}>Transcripción del Video de Cámara de Seguridad</Text>
-            <TextInput
+            <Text style={{ color: theme.colors.secondary, fontWeight: '600', fontSize: 16, marginTop: 12, alignSelf: 'flex-start' }}>
+              Transcripción del Video de Cámara de Seguridad
+            </Text>
+            <StyledTextInput
               placeholder="Resumen"
-              placeholderTextColor={theme.colors.onSurface}
-              style={{ color: theme.colors.secondary, fontSize: 16, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 10, width: '100%', marginBottom: 16, minHeight: 48 }}
+              placeholderTextColor={theme.colors.onSurface + '99'}
               value={newCase.resumen}
-              onChangeText={text => setNewCase({ ...newCase, resumen: text })}
+              onChangeText={(text) => setNewCase({ ...newCase, resumen: text })}
               multiline
+              style={{ minHeight: 80 }}
             />
             <TouchableOpacity
-              style={{ backgroundColor: theme.colors.secondary, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 32, marginBottom: 12 }}
+              style={{ borderRadius: 12, marginTop: 24 }}
               onPress={handleCreateCase}
             >
-              <Text style={{ color: theme.colors.onPrimary, fontWeight: 'bold', fontSize: 16 }}>Confirmar</Text>
+              <GradientButton
+                colors={[theme.colors.accent, theme.colors.accent + 'CC']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={{ color: theme.colors.onPrimary, fontWeight: '700', fontSize: 16, textAlign: 'center', paddingVertical: 12 }}>
+                  Confirmar
+                </Text>
+              </GradientButton>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setCreateModalVisible(false)}>
-              <Text style={{ color: theme.colors.secondary, fontSize: 16 }}>Cancelar</Text>
-            </TouchableOpacity>
+            <CloseButton onPress={() => setCreateModalVisible(false)}>
+              <CloseText>Cancelar</CloseText>
+            </CloseButton>
           </ModalContent>
         </ModalContainer>
       </Modal>
@@ -466,4 +539,4 @@ export default function CasosScreen() {
       </Modal>
     </GradientBackground>
   );
-} 
+}
