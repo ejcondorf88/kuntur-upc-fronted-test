@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, Modal, Switch, TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
 import { usePolicias } from '../hooks/usePolicias';
@@ -537,6 +537,8 @@ export default function ElementosScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   const params = useLocalSearchParams();
+  const alertData = params.alertData ? JSON.parse(params.alertData) : {};
+  console.log('alertData recibido en elementos:', alertData);
   const theme = useTheme();
 
   // Filtrar policías basado en la búsqueda
@@ -560,19 +562,14 @@ export default function ElementosScreen() {
   const handleConfirm = () => {
     setModalVisible(false);
     if (selectedElement) {
+      console.log('Enviando alertData a casos:', alertData);
       router.push({
         pathname: '/casos',
         params: {
-          location: params.location || '',
-          date: params.date || '',
-          time: params.time || '',
-          transcription_video: params.transcription_video || '',
-          key_words: params.key_words || '',
+          alertData: params.alertData,
           nombrePolicia: `${selectedElement.nombre} ${selectedElement.apellido}`,
           rango: selectedElement.cargo,
           pnc: selectedElement.pnc,
-          cordinates: params.cordinates ? (typeof params.cordinates === 'string' ? params.cordinates : JSON.stringify(params.cordinates)) : undefined,
-          confidence_level: params.confidence_level || undefined,
         }
       });
     }
@@ -619,6 +616,18 @@ export default function ElementosScreen() {
   );
 
   const availableCount = filteredPolicias.filter(p => isAvailable()).length;
+
+  // Llenar el modal con datos de alertData cuando se abra
+  useEffect(() => {
+    if (modalVisible && alertData) {
+      // Aquí puedes setear estados locales si el modal necesita mostrar datos de alertData
+      // Por ejemplo, si tienes un estado para mostrar la ubicación, fecha, etc. en el modal, puedes hacer:
+      // setSomeState(alertData.location || '');
+      // setOtherState(alertData.date || '');
+      // O simplemente acceder a alertData directamente en el render del modal
+      console.log('Llenando modal con datos de alertData:', alertData);
+    }
+  }, [modalVisible, alertData]);
 
   return (
     <GradientBackground

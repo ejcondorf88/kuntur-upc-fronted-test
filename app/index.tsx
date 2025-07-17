@@ -199,6 +199,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (ws.lastMessage) {
       setLastMessage(ws.lastMessage);
+      console.log('Webhook recibido en index:', ws.lastMessage);
       console.log('Notificación recibida, habilitando botón:', ws.lastMessage);
       
       // Animación del botón cuando se activa
@@ -266,19 +267,12 @@ export default function HomeScreen() {
       }),
     ]).start();
 
-    const params = {
-      cameraId: '1',
-      ip: lastMessage.ip || lastMessage.stream_url || '192.168.1.10',
-      location: lastMessage.location || '',
-      date: lastMessage.date || '',
-      time: lastMessage.time || '',
-      transcription_video: lastMessage.transcription_video || '',
-      key_words: (lastMessage.key_words || []).join(', '),
-      cordinates: lastMessage.cordinates ? JSON.stringify(lastMessage.cordinates) : undefined,
-      confidence_level: lastMessage.confidence_level || undefined,
-    };
-    console.log('Navegando a /connection-info/[cameraId] con params:', params);
-    router.push({ pathname: '/connection-info/[cameraId]', params });
+    console.log('Enviando alertData a connection-info:', lastMessage);
+    // Pasar el JSON completo como alertData
+    router.push({
+      pathname: '/connection-info/[cameraId]',
+      params: { alertData: JSON.stringify(lastMessage) }
+    });
   };
 
   return (

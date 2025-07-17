@@ -252,6 +252,8 @@ export default function CasosScreen() {
   });
   const router = useRouter();
   const params = useLocalSearchParams();
+  const alertData = params.alertData ? JSON.parse(params.alertData) : {};
+  console.log('alertData recibido en casos:', alertData);
   const { createCase, loading, error, result } = useCreateCase();
   const buttonScaleAnim = React.useRef(new Animated.Value(1)).current;
 
@@ -263,34 +265,22 @@ export default function CasosScreen() {
     setCreateModalVisible(true);
   };
 
+  // Llenar el modal con alertData si está disponible
   useEffect(() => {
-    if (createModalVisible) {
-      console.log('Autollenando modal de crear caso con:', params);
-      setNewCase((prev) => {
-        const ubicacion = (typeof params.location === 'string' ? params.location : Array.isArray(params.location) ? params.location[0] : '') || prev.ubicacion;
-        const fecha = (typeof params.date === 'string' ? params.date : Array.isArray(params.date) ? params.date[0] : '') || prev.fecha;
-        const resumen = (typeof params.transcription_video === 'string' ? params.transcription_video : Array.isArray(params.transcription_video) ? params.transcription_video[0] : '') || prev.resumen;
-        const palabrasClave = (typeof params.key_words === 'string' ? params.key_words : Array.isArray(params.key_words) ? params.key_words[0] : '') || prev.palabrasClave || '';
-        const hora = (typeof params.time === 'string' ? params.time : Array.isArray(params.time) ? params.time[0] : '') || prev.hora || '';
-        const nombrePolicia = (typeof params.nombrePolicia === 'string' ? params.nombrePolicia : Array.isArray(params.nombrePolicia) ? params.nombrePolicia[0] : '') || prev.nombrePolicia || '';
-        const rango = (typeof params.rango === 'string' ? params.rango : Array.isArray(params.rango) ? params.rango[0] : '') || prev.rango || '';
-        const pnc = (typeof params.pnc === 'string' ? params.pnc : Array.isArray(params.pnc) ? params.pnc[0] : '') || prev.pnc || '';
-        const codigoDelito = (typeof params.codigoDelito === 'string' ? params.codigoDelito : Array.isArray(params.codigoDelito) ? params.codigoDelito[0] : '') || prev.codigoDelito || 'a';
-        return {
-          ...prev,
-          ubicacion,
-          fecha,
-          resumen,
-          palabrasClave,
-          hora,
-          nombrePolicia,
-          rango,
-          pnc,
-          codigoDelito,
-        };
-      });
+    if (createModalVisible && alertData) {
+      setNewCase((prev) => ({
+        ...prev,
+        ubicacion: alertData.location || prev.ubicacion,
+        fecha: alertData.date || prev.fecha,
+        resumen: alertData.transcription_video || prev.resumen,
+        palabrasClave: Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || prev.palabrasClave || '',
+        hora: alertData.time || prev.hora || '',
+        nombrePolicia: params.nombrePolicia || prev.nombrePolicia || '',
+        rango: params.rango || prev.rango || '',
+        pnc: params.pnc || prev.pnc || '',
+      }));
     }
-  }, [createModalVisible, params]);
+  }, [createModalVisible, alertData, params]);
 
   const openModal = (c: MockCase) => {
     setSelectedCase(c);
@@ -303,42 +293,43 @@ export default function CasosScreen() {
     setCreateModalVisible(false);
     try {
       let cordinatesObj = undefined;
-      if (params.cordinates) {
+      if (alertData.cordinates) {
         try {
-          cordinatesObj = typeof params.cordinates === 'string' ? JSON.parse(params.cordinates) : params.cordinates;
+          cordinatesObj = typeof alertData.cordinates === 'string' ? JSON.parse(alertData.cordinates) : alertData.cordinates;
         } catch (e) {
           cordinatesObj = undefined;
         }
       }
       const partePolicial = {
-        ubicacion: params.location || newCase.ubicacion,
-        fecha: params.date || newCase.fecha,
-        hora: params.time || newCase.hora,
-        descripcion: params.transcription_video || newCase.resumen,
-        palabrasClave: params.key_words || newCase.palabrasClave,
-        nivelConfianza: params.confidence_level,
-        alerta: params.alert_information,
+        ubicacion: alertData.location || newCase.ubicacion,
+        fecha: alertData.date || newCase.fecha,
+        hora: alertData.time || newCase.hora,
+        descripcion: alertData.transcription_video || newCase.resumen,
+        palabrasClave: Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || newCase.palabrasClave,
+        nivelConfianza: alertData['confidence level'] || alertData.confidence_level,
+        alerta: alertData.alert_information,
         dispositivo: {
-          id: params.device_id,
-          tipo: params.device_type,
-          ip: params.ip || params.stream_url,
+          id: alertData.device_id,
+          tipo: alertData.device_type,
+          ip: alertData.ip || alertData.stream_url,
         },
-        coordenadas:
-          cordinatesObj && typeof cordinatesObj === 'object' && 'latitude' in cordinatesObj && 'longitude' in cordinatesObj
-            ? {
-                lat: cordinatesObj.latitude,
-                lng: cordinatesObj.longitude,
-              }
-            : undefined,
-        duracionVideo: params.media_duration,
+        coordenadas: cordinatesObj && typeof cordinatesObj === 'object' && 'latitude' in cordinatesObj && 'longitude' in cordinatesObj
+          ? {
+              lat: cordinatesObj.latitude,
+              lng: cordinatesObj.longitude,
+            }
+          : undefined,
+        duracionVideo: alertData.media_duration,
         nombrePolicia: newCase.nombrePolicia,
         rango: newCase.rango,
         pnc: newCase.pnc,
-        codigoDelito: newCase.codigoDelito, // <-- Agregado
+        codigoDelito: newCase.codigoDelito,
+        user: alertData.user || 'usuario_desconocido',
       };
-      console.log('Datos que se enviarán al backend:', partePolicial); // <-- Nuevo log
+      console.log('Datos que se enviarán al backend:', partePolicial);
+      console.log('Objeto final que se enviará al backend:', partePolicial);
       const res = await createCase(partePolicial);
-      console.log('Respuesta del backend:', res); // <-- Nuevo log
+      console.log('Respuesta del backend:', res);
       if (res instanceof Blob) {
         const pdfUrl = URL.createObjectURL(res);
         window.open(pdfUrl, '_blank');
@@ -351,20 +342,8 @@ export default function CasosScreen() {
     router.push({
       pathname: '/crear-caso',
       params: {
-        id: newCase.id,
-        fecha: newCase.fecha,
-        ubicacion: newCase.ubicacion,
-        tipo: newCase.tipo,
-        estado: newCase.estado,
-        nombrePolicia: newCase.nombrePolicia,
-        rango: newCase.rango,
-        unidad: newCase.unidad,
-        idOficial: newCase.idOficial,
-        resumen: newCase.resumen,
-        palabrasClave: newCase.palabrasClave,
-        hora: newCase.hora,
-        pnc: newCase.pnc,
-        codigoDelito: newCase.codigoDelito,
+        ...params,
+        alertData: params.alertData,
       },
     });
     setNewCase({

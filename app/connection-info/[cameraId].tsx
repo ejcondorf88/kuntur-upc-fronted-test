@@ -294,7 +294,9 @@ const AnimatedButton = styled(Animated.View)`
 `;
 
 export default function ConnectionInfoScreen() {
-  const { cameraId, ip, location, date, time, transcription_video, key_words, cordinates, confidence_level } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const alertData = params.alertData ? JSON.parse(params.alertData) : {};
+  console.log('alertData recibido en connection-info:', alertData);
   const router = useRouter();
   const theme = useTheme();
   const [streamError, setStreamError] = useState(false);
@@ -325,8 +327,16 @@ export default function ConnectionInfoScreen() {
   }, []);
 
   // Asegurar que ip sea string
-  const ipStr = Array.isArray(ip) ? ip[0] : ip;
+  const ipStr = alertData.ip || alertData.stream_url || '';
   console.log('Valor de ipStr en ConnectionInfoScreen:', ipStr);
+
+  // Reemplazar variables sueltas por alertData
+  const dateStr = alertData.date || '';
+  const timeStr = alertData.time || '';
+  const transcriptionVideo = alertData.transcription_video || '';
+  const keyWords = Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || '';
+  const cordinates = alertData.cordinates;
+  const confidenceLevel = alertData.confidence_level || alertData['confidence level'] || undefined;
 
   // Función para manejar falsa alarma
   const handleFalsaAlarma = () => {
@@ -475,7 +485,7 @@ export default function ConnectionInfoScreen() {
 
               <CameraContainer>
                 <CameraHeader>
-                  <CameraLabel>Cámara {cameraId}</CameraLabel>
+                  <CameraLabel>Cámara {params.cameraId}</CameraLabel>
                   <StreamStatus>
                     <StatusDot connected={isConnected} />
                     <StatusText>
@@ -528,20 +538,11 @@ export default function ConnectionInfoScreen() {
                     bgColor="rgba(185, 251, 192, 0.9)" 
                     borderColor="#2DC653"
                     onPress={() => handleButtonPress(() => {
-                      const paramsToSend = {
-                        ip: ip || '',
-                        location: location || '',
-                        date: date || '',
-                        time: time || '',
-                        transcription_video: transcription_video || '',
-                        key_words: key_words || '',
-                        cordinates: typeof cordinates !== 'undefined' ? (typeof cordinates === 'string' ? cordinates : JSON.stringify(cordinates)) : undefined,
-                        confidence_level: typeof confidence_level !== 'undefined' ? confidence_level : undefined,
-                      };
-                      console.log('Params que se envían a /elementos:', paramsToSend);
+                      // Al navegar a elementos:
+                      console.log('Enviando alertData a elementos:', alertData);
                       router.push({
                         pathname: '/elementos',
-                        params: paramsToSend
+                        params: { alertData: JSON.stringify(alertData) }
                       });
                     })}
                   >
@@ -569,7 +570,7 @@ export default function ConnectionInfoScreen() {
   }
 
   // Si no hay IP, usa el mapa estático como antes
-  const camera = cameraMap[cameraId as string];
+  const camera = cameraMap[params.cameraId as string];
   if (!camera) {
     return (
       <Container>
