@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Animated, Dimensions, StatusBar } from 'react-native';
 import styled from 'styled-components/native';
 import { Button } from '../components/ui/Button';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { useNotificaciones } from '../hooks/useNotificaciones';
 import { useTheme } from '../theme/them';
 
 const { width, height } = Dimensions.get('window');
@@ -171,8 +171,8 @@ const PulseAnimation = styled(Animated.View)`
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const [lastMessage, setLastMessage] = useState<any>(null);
-  const ws = useWebSocket('ws://192.168.11.100:8001/ws/1');
+  const { notificaciones, loading } = useNotificaciones();
+  const lastMessage = notificaciones.length > 0 ? notificaciones[0] : null;
 
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -197,11 +197,7 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (ws.lastMessage) {
-      setLastMessage(ws.lastMessage);
-      console.log('Webhook recibido en index:', ws.lastMessage);
-      console.log('Notificación recibida, habilitando botón:', ws.lastMessage);
-      
+    if (lastMessage) {
       // Animación del botón cuando se activa
       Animated.sequence([
         Animated.spring(buttonScaleAnim, {
@@ -235,13 +231,13 @@ export default function HomeScreen() {
       };
       startPulse();
     }
-  }, [ws.lastMessage]);
+  }, [lastMessage]);
 
   const isButtonEnabled = !!lastMessage;
 
   useFocusEffect(
     useCallback(() => {
-      setLastMessage(null);
+      // setLastMessage(null); // This line is no longer needed as lastMessage is managed by useNotificaciones
       pulseAnim.setValue(0);
       buttonScaleAnim.setValue(0.9);
     }, [])
@@ -271,7 +267,7 @@ export default function HomeScreen() {
     // Pasar el JSON completo como alertData
     router.push({
       pathname: '/connection-info/[cameraId]',
-      params: { alertData: JSON.stringify(lastMessage) }
+      params: { cameraId: lastMessage.device_id || 'cam1', alertData: JSON.stringify(lastMessage) }
     });
   };
 
@@ -303,8 +299,8 @@ export default function HomeScreen() {
             <AlertCard>
               <CenterLogo source={require('../assets/images/image.png')} />
               
-              <StatusIndicator active={isButtonEnabled}>
-                <StatusDot active={isButtonEnabled} />
+              <StatusIndicator>
+                <StatusDot style={{ backgroundColor: isButtonEnabled ? theme.colors.error : theme.colors.onPrimary + '55' }} />
                 <StatusText>
                   {isButtonEnabled ? 'Evento detectado' : 'Monitoreando...'}
                 </StatusText>
