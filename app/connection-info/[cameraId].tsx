@@ -360,6 +360,7 @@ export default function ConnectionInfoScreen() {
 
     // Consumir el mensaje de RabbitMQ si hay deliveryTag
     if (deliveryTag) {
+      console.log('Enviando a ack_alerta:', { delivery_tag: deliveryTag });
       await fetch('http://localhost:8001/ack_alerta', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

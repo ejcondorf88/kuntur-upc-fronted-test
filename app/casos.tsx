@@ -244,41 +244,17 @@ const FABText = styled.Text`
   margin-top: 4px;
 `;
 
-// Función para autocompletar campos con OpenAI
+// Función para autocompletar campos usando la API local
 async function completarCamposConOpenAI(alertData, camposVacios) {
-  const prompt = `
-  Tengo la siguiente información de alerta:
-  - Información: ${alertData.alert_information}
-  - Descripción: ${alertData.descripcion}
-  - Palabras clave: ${Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words}
-  - Ubicación: ${alertData.location || alertData.ubicacion}
-  - Fecha: ${alertData.date || alertData.fecha}
-  - Hora: ${alertData.time || alertData.hora}
-  - Nivel de confianza: ${alertData.confidence_level || alertData.nivelConfianza}
-  - Transcripción video: ${alertData.transcription_video}
-  - Transcripción audio: ${alertData.transcription_audio}
-
-  Los siguientes campos del formulario están vacíos o incompletos: ${camposVacios.join(', ')}.
-
-  Por favor, sugiere valores apropiados para estos campos, usando la información de la alerta. Devuelve la respuesta en formato JSON, con cada campo como clave.
-  `;
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('http://localhost:8001/api/completar-campos', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer TU_API_KEY_OPENAI'
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 200
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ alertData, camposVacios })
   });
-
   const data = await response.json();
+  console.log('Respuesta de completar-campos:', data);
   try {
-    return JSON.parse(data.choices[0].message.content);
+    return typeof data.completados === 'string' ? JSON.parse(data.completados) : data.completados;
   } catch {
     return {};
   }
