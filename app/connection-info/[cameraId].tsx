@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Platform, ScrollView, StyleSheet } from 'react-native';
+import { Animated, Dimensions, ScrollView, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
+import YoutubePlayer from 'react-native-youtube-iframe';
 import styled from 'styled-components/native';
 import { useTheme } from '../../theme/them';
 
@@ -296,6 +297,11 @@ const AnimatedButton = styled(Animated.View)`
 export default function ConnectionInfoScreen() {
   const params = useLocalSearchParams();
   const alertData = params.alertData ? JSON.parse(params.alertData) : {};
+  const deliveryTag = Array.isArray(params.deliveryTag)
+    ? Number(params.deliveryTag[0])
+    : params.deliveryTag
+      ? Number(params.deliveryTag)
+      : null;
   console.log('alertData recibido en connection-info:', alertData);
   const router = useRouter();
   const theme = useTheme();
@@ -338,10 +344,29 @@ export default function ConnectionInfoScreen() {
   const cordinates = alertData.cordinates;
   const confidenceLevel = alertData.confidence_level || alertData['confidence level'] || undefined;
 
+  const clipUrl = Array.isArray(alertData.stream_url)
+    ? alertData.stream_url[0]
+    : alertData.stream_url;
+
+  const getYoutubeId = (url: string) => {
+    const match = url.match(/(?:youtube\.com.*(?:[\\?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  };
+  const videoId = clipUrl ? getYoutubeId(clipUrl) : null;
+
   // Función para manejar falsa alarma
-  const handleFalsaAlarma = () => {
+  const handleFalsaAlarma = async () => {
     console.log('Falsa alarma detectada - cerrando conexión al stream');
-    
+
+    // Consumir el mensaje de RabbitMQ si hay deliveryTag
+    if (deliveryTag) {
+      await fetch('http://localhost:8001/ack_alerta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delivery_tag: deliveryTag })
+      });
+    }
+
     // Animación de botón
     Animated.sequence([
       Animated.timing(buttonScaleAnim, {
@@ -493,26 +518,16 @@ export default function ConnectionInfoScreen() {
                     </StatusText>
                   </StreamStatus>
                 </CameraHeader>
-
                 <VideoContainer>
-                  {Platform.OS === 'web' ? (
-                    <video 
-                      ref={videoRef}
-                      controls 
-                      autoPlay 
-                      style={{ width: '100%', height: '100%' }}
-                      onError={handleStreamError}
-                      onLoad={handleStreamLoad}
-                    >
-                      <source src={String(ipStr)} />
-                      Tu navegador no soporta video embebido.
-                    </video>
-                  ) : ipStr ? (
-                    <WebView source={{ uri: ipStr }} style={{ flex: 1 }} />
+                  {videoId ? (
+                    <YoutubePlayer
+                      height={220}
+                      play={false}
+                      videoId={videoId}
+                    />
                   ) : (
                     <ErrorContainer>
-                      <Ionicons name="videocam-off-outline" size={48} color="#ff6b6b" />
-                      <ErrorText>No hay stream disponible (IP no definida)</ErrorText>
+                      <ErrorText>No hay clip disponible</ErrorText>
                     </ErrorContainer>
                   )}
                 </VideoContainer>

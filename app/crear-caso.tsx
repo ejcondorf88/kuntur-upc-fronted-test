@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dimensions, Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -15,6 +15,21 @@ export default function CrearCasoScreen() {
   const time = params.time || '';
   const transcription_video = params.transcription_video || '';
   const key_words = params.key_words || '';
+  const deliveryTag = Array.isArray(params.deliveryTag)
+    ? Number(params.deliveryTag[0])
+    : params.deliveryTag
+      ? Number(params.deliveryTag)
+      : null;
+
+  useEffect(() => {
+    if (deliveryTag) {
+      fetch('http://localhost:8001/ack_alerta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delivery_tag: deliveryTag })
+      });
+    }
+  }, [deliveryTag]);
 
   const [showJusticiaPrompt, setShowJusticiaPrompt] = useState(true);
 

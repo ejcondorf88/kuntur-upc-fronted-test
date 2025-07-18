@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, StatusBar } from 'react-native';
 import styled from 'styled-components/native';
 import { Button } from '../components/ui/Button';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { useRabbitPolling } from '../hooks/useRabbitPolling';
 import { useTheme } from '../theme/them';
 
 const { width, height } = Dimensions.get('window');
@@ -121,13 +121,18 @@ const CenterLogo = styled.Image`
 const StatusIndicator = styled.View`
   flex-direction: row;
   align-items: center;
-  background-color: ${({ active, theme }) => 
-    active ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)'};
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   padding: 8px 16px;
   margin-top: 16px;
-  border: 1px solid ${({ active, theme }) => 
-    active ? 'rgba(76, 175, 80, 0.4)' : 'rgba(158, 158, 158, 0.4)'};
+  border: 1px solid rgba(255, 255, 255, 0.2);
+`;
+
+const StatusDot = styled.View`
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #4CAF50;
 `;
 
 const StatusText = styled.Text`
@@ -135,14 +140,6 @@ const StatusText = styled.Text`
   font-size: 14px;
   font-weight: 500;
   margin-left: 8px;
-`;
-
-const StatusDot = styled.View`
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  background-color: ${({ active }) => 
-    active ? '#4CAF50' : '#9E9E9E'};
 `;
 
 const BottomArea = styled.View`
@@ -171,9 +168,9 @@ const PulseAnimation = styled(Animated.View)`
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { alert, loading, error, ackAlert } = useRabbitPolling(2000);
   const [lastMessage, setLastMessage] = useState<any>(null);
-  const ws = useWebSocket('ws://192.168.11.100:8001/ws/1');
-
+  
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
@@ -197,61 +194,25 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (ws.lastMessage) {
-      setLastMessage(ws.lastMessage);
-      console.log('Webhook recibido en index:', ws.lastMessage);
-      console.log('Notificación recibida, habilitando botón:', ws.lastMessage);
-      
-      // Animación del botón cuando se activa
-      Animated.sequence([
-        Animated.spring(buttonScaleAnim, {
-          toValue: 1.05,
-          useNativeDriver: true,
-          speed: 20,
-        }),
-        Animated.spring(buttonScaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          speed: 20,
-        }),
-      ]).start();
-
-      // Animación de pulso para el botón activo
-      const startPulse = () => {
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          if (lastMessage) startPulse();
-        });
-      };
-      startPulse();
+    console.log('alert:', alert);
+    // Solo setear si hay alerta nueva y no hay lastMessage
+    if (alert && !lastMessage) {
+      setLastMessage(alert);
     }
-  }, [ws.lastMessage]);
+    // NO limpiar lastMessage cuando alert es null
+  }, [alert, lastMessage]);
 
   const isButtonEnabled = !!lastMessage;
 
   useFocusEffect(
     useCallback(() => {
-      setLastMessage(null);
       pulseAnim.setValue(0);
       buttonScaleAnim.setValue(0.9);
     }, [])
   );
 
-  const handlePress = () => {
-    if (!lastMessage) {
-      console.log('No hay lastMessage, no se navega');
-      return;
-    }
+  const handlePress = async () => {
+    if (!lastMessage) return;
     
     // Animación de tap
     Animated.sequence([
@@ -271,8 +232,10 @@ export default function HomeScreen() {
     // Pasar el JSON completo como alertData
     router.push({
       pathname: '/connection-info/[cameraId]',
-      params: { alertData: JSON.stringify(lastMessage) }
+      params: { cameraId: '1', alertData: JSON.stringify(lastMessage) }
     });
+    await ackAlert();
+    setLastMessage(null);
   };
 
   return (
@@ -303,10 +266,18 @@ export default function HomeScreen() {
             <AlertCard>
               <CenterLogo source={require('../assets/images/image.png')} />
               
-              <StatusIndicator active={isButtonEnabled}>
-                <StatusDot active={isButtonEnabled} />
+              <StatusIndicator>
+                <StatusDot />
                 <StatusText>
                   {isButtonEnabled ? 'Evento detectado' : 'Monitoreando...'}
+                </StatusText>
+              </StatusIndicator>
+              
+              {/* Estado de carga o error */}
+              <StatusIndicator>
+                <StatusDot />
+                <StatusText>
+                  {loading ? 'Verificando...' : error ? `Error: ${error}` : 'Sistema listo'}
                 </StatusText>
               </StatusIndicator>
             </AlertCard>

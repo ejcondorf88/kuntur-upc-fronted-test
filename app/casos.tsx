@@ -244,6 +244,46 @@ const FABText = styled.Text`
   margin-top: 4px;
 `;
 
+// Función para autocompletar campos con OpenAI
+async function completarCamposConOpenAI(alertData, camposVacios) {
+  const prompt = `
+  Tengo la siguiente información de alerta:
+  - Información: ${alertData.alert_information}
+  - Descripción: ${alertData.descripcion}
+  - Palabras clave: ${Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words}
+  - Ubicación: ${alertData.location || alertData.ubicacion}
+  - Fecha: ${alertData.date || alertData.fecha}
+  - Hora: ${alertData.time || alertData.hora}
+  - Nivel de confianza: ${alertData.confidence_level || alertData.nivelConfianza}
+  - Transcripción video: ${alertData.transcription_video}
+  - Transcripción audio: ${alertData.transcription_audio}
+
+  Los siguientes campos del formulario están vacíos o incompletos: ${camposVacios.join(', ')}.
+
+  Por favor, sugiere valores apropiados para estos campos, usando la información de la alerta. Devuelve la respuesta en formato JSON, con cada campo como clave.
+  `;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer TU_API_KEY_OPENAI'
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 200
+    })
+  });
+
+  const data = await response.json();
+  try {
+    return JSON.parse(data.choices[0].message.content);
+  } catch {
+    return {};
+  }
+}
+
 export default function CasosScreen() {
   const theme = useTheme();
   const cases = useMockCases();
@@ -273,18 +313,39 @@ export default function CasosScreen() {
   // Llenar el modal con alertData si está disponible
   useEffect(() => {
     if (createModalVisible && alertData) {
-      setNewCase((prev) => ({
-        ...prev,
-        ubicacion: alertData.location || prev.ubicacion,
-        fecha: alertData.date || prev.fecha,
-        resumen: alertData.transcription_video || prev.resumen,
-        palabrasClave: Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || prev.palabrasClave || '',
-        hora: alertData.time || prev.hora || '',
-        nombrePolicia: params.nombrePolicia || prev.nombrePolicia || '',
-        rango: params.rango || prev.rango || '',
-        pnc: params.pnc || prev.pnc || '',
-      }));
+      // Detecta campos vacíos
+      const camposVacios = Object.keys(newCase).filter(key => !newCase[key]);
+      if (camposVacios.length > 0) {
+        (async () => {
+          const completados = await completarCamposConOpenAI(alertData, camposVacios);
+          setNewCase((prev) => ({
+            ...prev,
+            ...completados,
+            ubicacion: alertData.location || prev.ubicacion,
+            fecha: alertData.date || prev.fecha,
+            resumen: alertData.transcription_video || prev.resumen,
+            palabrasClave: Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || prev.palabrasClave || '',
+            hora: alertData.time || prev.hora || '',
+            nombrePolicia: params.nombrePolicia || prev.nombrePolicia || '',
+            rango: params.rango || prev.rango || '',
+            pnc: params.pnc || prev.pnc || '',
+          }));
+        })();
+      } else {
+        setNewCase((prev) => ({
+          ...prev,
+          ubicacion: alertData.location || prev.ubicacion,
+          fecha: alertData.date || prev.fecha,
+          resumen: alertData.transcription_video || prev.resumen,
+          palabrasClave: Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || prev.palabrasClave || '',
+          hora: alertData.time || prev.hora || '',
+          nombrePolicia: params.nombrePolicia || prev.nombrePolicia || '',
+          rango: params.rango || prev.rango || '',
+          pnc: params.pnc || prev.pnc || '',
+        }));
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createModalVisible, alertData, params]);
 
   const openModal = (c: MockCase) => {
