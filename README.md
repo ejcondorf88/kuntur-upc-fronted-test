@@ -6,7 +6,7 @@ Este frontend es una app móvil y web construida con **React Native**, **Expo** 
 
 ## Requisitos
 
-- Node.js >= 16
+- Node.js >= 1
 - npm o yarn
 - [Expo CLI](https://docs.expo.dev/get-started/installation/):  
   `npm install -g expo-cli`
