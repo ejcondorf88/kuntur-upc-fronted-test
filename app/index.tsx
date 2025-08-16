@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, StatusBar } from 'react-native';
 import styled from 'styled-components/native';
+import { Header as AppHeader } from '../components/Header';
 import { Button } from '../components/ui/Button';
 import { useRabbitPolling } from '../hooks/useRabbitPolling';
 import { useTheme } from '../theme/them';
@@ -242,7 +242,7 @@ export default function HomeScreen() {
     <Container>
       <StatusBar barStyle={theme.colors.statusBarStyle} backgroundColor="transparent" translucent />
       <GradientBackground
-        colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+        colors={[theme.colors.primary, theme.colors.secondary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >

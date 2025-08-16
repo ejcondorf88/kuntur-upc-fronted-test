@@ -1,9 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, Modal, Switch, TouchableOpacity } from 'react-native';
+
 import styled from 'styled-components/native';
+import { Header as AppHeader } from '../components/Header';
 import { usePolicias } from '../hooks/usePolicias';
 import { useTheme } from '../theme/them';
 
@@ -84,318 +87,63 @@ const LocationText = styled.Text`
   font-weight: 500;
 `;
 
-const SearchContainer = styled.View`
-  margin: 0 24px 20px 24px;
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 24px;
+const getCardWidth = () => {
+  const screenWidth = Dimensions.get('window').width;
+  if (screenWidth < 500) return '98%'; // 1 por fila
+  if (screenWidth < 900) return '46%'; // 2 por fila
+  return '30%'; // 3 por fila
+};
+
+const CardGrid = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  padding-bottom: 24px;
+`;
+
+const GradientCard = styled(Animated.View)<{ cardwidth: string }>`
   flex-direction: row;
   align-items: center;
-  padding: 0 20px;
-  elevation: 6;
-  shadow-color: ${({ theme }) => theme.colors.cardShadow};
-  shadow-opacity: 0.15;
-  shadow-radius: 12px;
-  shadow-offset: 0px 4px;
-  border: 1px solid ${({ theme }) => theme.colors.primary}20;
-`;
-
-const SearchInput = styled.TextInput`
-  flex: 1;
-  padding: 16px 12px;
-  color: ${({ theme }) => theme.colors.onSurface};
-  font-size: 16px;
-  font-weight: 500;
-`;
-
-const StatsContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  margin: 0 24px 24px 24px;
-  padding: 20px;
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 20px;
-  elevation: 4;
-  shadow-color: ${({ theme }) => theme.colors.cardShadow};
-  shadow-opacity: 0.12;
-  shadow-radius: 8px;
-  shadow-offset: 0px 2px;
-`;
-
-const StatItem = styled.View`
-  align-items: center;
-  flex: 1;
-`;
-
-const StatNumber = styled.Text`
-  font-size: 28px;
-  font-weight: 800;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-bottom: 4px;
-`;
-
-const StatLabel = styled.Text`
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.secondary};
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const StatDivider = styled.View`
-  width: 1px;
-  height: 40px;
-  background-color: ${({ theme }) => theme.colors.surfaceVariant};
-  margin: 0 16px;
-`;
-
-const CardGrid = styled.ScrollView`
-  flex: 1;
-  padding: 0 16px;
-`;
-
-const ElementCard = styled.TouchableOpacity`
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 20px;
-  padding: 24px;
-  margin: 8px;
-  elevation: 5;
-  shadow-color: ${({ theme }) => theme.colors.cardShadow};
-  shadow-opacity: 0.18;
-  shadow-radius: 12px;
-  shadow-offset: 0px 4px;
-  border: 1px solid ${({ theme }) => theme.colors.primary}10;
-  position: relative;
-  overflow: hidden;
-`;
-
-const CardGradient = styled(LinearGradient)`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-`;
-
-const CardHeader = styled.View`
-  flex-direction: row;
-  align-items: center;
-  margin-bottom: 16px;
-`;
-
-const AvatarContainer = styled.View`
-  width: 56px;
-  height: 56px;
+  background-color: #fff;
   border-radius: 28px;
-  background-color: ${({ theme }) => theme.colors.primary}15;
+  padding: 24px 20px;
+  margin: 16px 12px 0 12px;
+  width: ${({ cardwidth }) => cardwidth};
+  max-width: 320px;
+  shadow-color: #000;
+  shadow-opacity: 0.10;
+  shadow-radius: 12px;
+  elevation: 6;
+  border-width: 0;
+`;
+
+const AvatarWrapper = styled.View`
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background-color: #e6e9f0;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
-  border: 2px solid ${({ theme }) => theme.colors.primary}30;
+  margin-right: 18px;
 `;
 
-const CardInfo = styled.View`
+const CardContent = styled.View`
   flex: 1;
+  justify-content: center;
 `;
 
-const CardName = styled.Text`
-  color: ${({ theme }) => theme.colors.primary};
+const CardText = styled.Text`
+  color: #6c4eb6;
   font-size: 18px;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 `;
 
-const CardRank = styled.Text`
-  color: ${({ theme }) => theme.colors.secondary};
-  font-size: 14px;
-  font-weight: 600;
-  background-color: ${({ theme }) => theme.colors.secondary}10;
-  padding: 4px 8px;
-  border-radius: 8px;
-  align-self: flex-start;
-`;
-
-const StatusContainer = styled.View`
-  flex-direction: row;
-  align-items: center;
-  background-color: ${({ available, theme }) => available ? '#4CAF50' : '#FF5722'}15;
-  padding: 6px 12px;
-  border-radius: 16px;
-`;
-
-const StatusIndicator = styled.View<{ available: boolean }>`
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  background-color: ${({ available }) => available ? '#4CAF50' : '#FF5722'};
-  margin-right: 6px;
-`;
-
-const StatusText = styled.Text<{ available: boolean }>`
-  color: ${({ available }) => available ? '#4CAF50' : '#FF5722'};
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-`;
-
-const CardDetails = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top-width: 1px;
-  border-top-color: ${({ theme }) => theme.colors.surfaceVariant};
-`;
-
-const PncBadge = styled.View`
-  background-color: ${({ theme }) => theme.colors.primary}20;
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.primary}30;
-`;
-
-const PncText = styled.Text`
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-`;
-
-const DistanceContainer = styled.View`
-  flex-direction: row;
-  align-items: center;
-  background-color: ${({ theme }) => theme.colors.surfaceVariant};
-  padding: 6px 10px;
-  border-radius: 10px;
-`;
-
-const DistanceText = styled.Text`
-  color: ${({ theme }) => theme.colors.secondary};
-  font-size: 12px;
-  font-weight: 600;
-  margin-left: 4px;
-`;
-
-const LoadingContainer = styled.View`
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  padding: 60px 40px;
-`;
-
-const LoadingTitle = styled.Text`
-  color: ${({ theme }) => theme.colors.onPrimary};
-  font-size: 20px;
-  font-weight: 700;
-  margin-top: 24px;
-  text-align: center;
-`;
-
-const LoadingSubtitle = styled.Text`
-  color: ${({ theme }) => theme.colors.onPrimary};
-  opacity: 0.7;
-  font-size: 14px;
-  margin-top: 8px;
-  text-align: center;
-`;
-
-const ErrorContainer = styled.View`
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  padding: 60px 40px;
-`;
-
-const ErrorTitle = styled.Text`
-  color: ${({ theme }) => theme.colors.error};
-  font-size: 20px;
-  font-weight: 700;
-  margin-top: 24px;
-  text-align: center;
-`;
-
-const ErrorSubtitle = styled.Text`
-  color: ${({ theme }) => theme.colors.onPrimary};
-  opacity: 0.7;
-  font-size: 14px;
-  margin-top: 8px;
-  text-align: center;
-`;
-
-const RetryButton = styled.TouchableOpacity`
-  background-color: ${({ theme }) => theme.colors.primary};
-  padding: 16px 32px;
-  border-radius: 16px;
-  margin-top: 20px;
-  elevation: 3;
-  shadow-color: ${({ theme }) => theme.colors.primary};
-  shadow-opacity: 0.3;
-  shadow-radius: 8px;
-`;
-
-const RetryButtonText = styled.Text`
-  color: ${({ theme }) => theme.colors.onPrimary};
-  font-weight: 700;
-  font-size: 16px;
-`;
-
-const EmptyContainer = styled.View`
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  padding: 60px 40px;
-`;
-
-const EmptyTitle = styled.Text`
-  color: ${({ theme }) => theme.colors.onPrimary};
-  font-size: 20px;
-  font-weight: 700;
-  margin-top: 24px;
-  text-align: center;
-`;
-
-const EmptySubtitle = styled.Text`
-  color: ${({ theme }) => theme.colors.onPrimary};
-  opacity: 0.7;
-  font-size: 14px;
-  margin-top: 8px;
-  text-align: center;
-`;
-
-const PaginationContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  margin: 16px 24px 8px 24px;
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-radius: 16px;
-  elevation: 2;
-  shadow-color: ${({ theme }) => theme.colors.cardShadow};
-  shadow-opacity: 0.1;
-  shadow-radius: 4px;
-`;
-
-const PaginationButton = styled.TouchableOpacity<{ disabled: boolean }>`
-  flex-direction: row;
-  align-items: center;
-  padding: 12px 16px;
-  border-radius: 12px;
-  background-color: ${({ disabled, theme }) => disabled ? theme.colors.surfaceVariant : theme.colors.primary};
-  opacity: ${({ disabled }) => disabled ? 0.6 : 1};
-  elevation: ${({ disabled }) => disabled ? 0 : 2};
-`;
-
-const PaginationText = styled.Text<{ disabled: boolean }>`
-  color: ${({ disabled, theme }) => disabled ? theme.colors.secondary : theme.colors.onPrimary};
-  font-weight: 600;
-  font-size: 14px;
-`;
-
-const PageInfo = styled.Text`
-  color: ${({ theme }) => theme.colors.onSurface};
-  font-size: 14px;
-  font-weight: 600;
+const CardSubText = styled.Text`
+  color: #6c4eb6;
+  font-size: 15px;
+  font-weight: 400;
 `;
 
 const SwitchRow = styled.View`
@@ -521,6 +269,62 @@ const CancelButtonText = styled.Text`
   font-weight: 600;
 `;
 
+const ModalContent = styled.View`
+  background-color: #fff;
+  border-radius: 24px;
+  padding: 32px;
+  width: 90%;
+  max-width: 400px;
+  align-items: center;
+  shadow-color: #000;
+  shadow-opacity: 0.18;
+  shadow-radius: 24;
+  elevation: 12;
+`;
+
+const ModalTitle = styled.Text`
+  font-size: 22px;
+  font-weight: bold;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 12px;
+`;
+
+const ModalLabel = styled.Text`
+  font-size: 16px;
+  color: ${({ theme }) => theme.colors.onSurface};
+  margin-bottom: 4px;
+  align-self: flex-start;
+`;
+
+const ModalValue = styled.Text`
+  font-size: 16px;
+  color: ${({ theme }) => theme.colors.onSurface};
+  margin-bottom: 12px;
+  text-align: left;
+  width: 100%;
+`;
+
+const CloseButton = styled.TouchableOpacity`
+  background-color: ${({ theme }) => theme.colors.secondary};
+  border-radius: 16px;
+  padding-vertical: 12px;
+  padding-horizontal: 32px;
+  margin-top: 12px;
+`;
+
+const CloseText = styled.Text`
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+`;
+
+const ModalContainer = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.4);
+`;
+
 type Element = {
   id: string;
   nombre: string;
@@ -529,17 +333,35 @@ type Element = {
   pnc: string;
 };
 
+const AnimatedModalContent = Animated.createAnimatedComponent(ModalContent);
+
 export default function ElementosScreen() {
   const [showAll, setShowAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { policias, loading, error, page, totalPages, nextPage, prevPage } = usePolicias() as { policias: Element[]; loading: boolean; error: string | null; page: number; totalPages: number; nextPage: () => void; prevPage: () => void };
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalAnim] = useState(new Animated.Value(0));
   const router = useRouter();
   const params = useLocalSearchParams();
   const alertData = params.alertData ? JSON.parse(params.alertData) : {};
   console.log('alertData recibido en elementos:', alertData);
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const appearAnims = useRef<Animated.Value[]>([]);
+
+  useEffect(() => {
+    if (policias && policias.length > 0) {
+      appearAnims.current = policias.map(() => new Animated.Value(0));
+      Animated.stagger(80, appearAnims.current.map(anim =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        })
+      )).start();
+    }
+  }, [policias]);
 
   // Filtrar policías basado en la búsqueda
   const filteredPolicias = useMemo(() => {
@@ -557,6 +379,11 @@ export default function ElementosScreen() {
   const handleCardPress = (el: Element) => {
     setSelectedElement(el);
     setModalVisible(true);
+    Animated.timing(modalAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleConfirm = () => {
@@ -573,6 +400,16 @@ export default function ElementosScreen() {
         }
       });
     }
+  };
+
+  const handleClose = () => {
+    Animated.timing(modalAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setModalVisible(false);
+    });
   };
 
   const locationValue = params.location || 'Ubicación no disponible';
@@ -631,63 +468,58 @@ export default function ElementosScreen() {
 
   return (
     <GradientBackground
-      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+      colors={[theme.colors.primary, theme.colors.secondary]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <Header>
-        <LogoRow>
-          <TouchableOpacity onPress={() => router.push('/')}>
-            <LogoImage source={require('../assets/images/icon.png')} />
-          </TouchableOpacity>
-          <TitleBlock>
-            <KunturTitle>KUNTUR</KunturTitle>
-            <Subtitle>Seguridad desde las nubes</Subtitle>
-          </TitleBlock>
-        </LogoRow>
-        <BuildingIcon>
-          <Ionicons name="business-outline" size={24} color={theme.colors.onPrimary} />
-        </BuildingIcon>
-      </Header>
-
-      <MainTitle>Elementos disponibles</MainTitle>
-      
+      <AppHeader
+        title="Elementos"
+        subtitle="Personal policial disponible"
+      />
+      <MainTitle>Elementos</MainTitle>
       <LocationSelector>
         <Ionicons name="location-outline" size={20} color={theme.colors.onPrimary} />
         <LocationText>{locationValue}</LocationText>
       </LocationSelector>
-
-      {/* Estadísticas mejoradas */}
-      <StatsContainer>
-        <StatItem>
-          <StatNumber>{filteredPolicias.length}</StatNumber>
-          <StatLabel>Elementos</StatLabel>
-        </StatItem>
-        <StatDivider />
-        <StatItem>
-          <StatNumber>{availableCount}</StatNumber>
-          <StatLabel>Disponibles</StatLabel>
-        </StatItem>
-        <StatDivider />
-        <StatItem>
-          <StatNumber>{getRandomDistance()}</StatNumber>
-          <StatLabel>Más cercano</StatLabel>
-        </StatItem>
-      </StatsContainer>
-
-      {/* Búsqueda mejorada */}
-      <SearchContainer>
-        <Ionicons name="search-outline" size={20} color={theme.colors.secondary} />
-        <SearchInput
-          placeholder="Buscar por nombre, rango o PNC..."
-          placeholderTextColor={theme.colors.secondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Ionicons name="close-circle" size={20} color={theme.colors.secondary} />
-          </TouchableOpacity>
+      <CardGrid>
+        {loading ? (
+          <Text style={{ color: theme.colors.onPrimary, fontSize: 18 }}>Cargando policías...</Text>
+        ) : error ? (
+          <Text style={{ color: theme.colors.error, fontSize: 18 }}>Error: {error}</Text>
+        ) : (
+          policias.map((el, idx) => {
+            const animatedValue = new Animated.Value(1);
+            const appearAnim = appearAnims.current[idx] || new Animated.Value(1);
+            return (
+              <TouchableOpacity
+                key={el.id}
+                onPress={() => handleCardPress(el)}
+                activeOpacity={0.85}
+                onPressIn={() => Animated.spring(animatedValue, { toValue: 0.97, useNativeDriver: true }).start()}
+                onPressOut={() => Animated.spring(animatedValue, { toValue: 1, useNativeDriver: true }).start()}
+              >
+                <GradientCard
+                  cardwidth={getCardWidth()}
+                  style={{
+                    transform: [
+                      { scale: animatedValue },
+                      { translateY: appearAnim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) },
+                    ],
+                    opacity: appearAnim,
+                  }}
+                >
+                  <AvatarWrapper>
+                    <Ionicons name="person" size={28} color="#4b3c7a" />
+                  </AvatarWrapper>
+                  <CardContent>
+                    <CardText>{el.nombre} {el.apellido}</CardText>
+                    <CardSubText>{el.cargo}  ID:
+PNC-{el.pnc}</CardSubText>
+                  </CardContent>
+                </GradientCard>
+              </TouchableOpacity>
+            );
+          })
         )}
       </SearchContainer>
 
@@ -782,73 +614,45 @@ export default function ElementosScreen() {
       <Modal
         visible={modalVisible}
         transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        animationType="none"
+        onRequestClose={handleClose}
       >
-        <ModalOverlay>
-          <ModalContent>
-            {selectedElement && (
-              <>
-                <ModalHeader>
-                  <ModalTitle>Confirmar asignación</ModalTitle>
-                  <ModalSubtitle>
-                    {selectedElement.nombre} {selectedElement.apellido}
-                  </ModalSubtitle>
-                </ModalHeader>
-
-                <ModalSection>
-                  <ModalSectionTitle>Información del elemento</ModalSectionTitle>
-                  <ModalInfoRow>
-                    <ModalInfoLabel>Rango:</ModalInfoLabel>
-                    <ModalInfoValue>{selectedElement.cargo}</ModalInfoValue>
-                  </ModalInfoRow>
-                  <ModalInfoRow>
-                    <ModalInfoLabel>PNC:</ModalInfoLabel>
-                    <ModalInfoValue>{selectedElement.pnc}</ModalInfoValue>
-                  </ModalInfoRow>
-                  <ModalInfoRow>
-                    <ModalInfoLabel>Distancia:</ModalInfoLabel>
-                    <ModalInfoValue>{getRandomDistance()}</ModalInfoValue>
-                  </ModalInfoRow>
-                  <ModalInfoRow>
-                    <ModalInfoLabel>Estado:</ModalInfoLabel>
-                    <ModalInfoValue>Disponible</ModalInfoValue>
-                  </ModalInfoRow>
-                </ModalSection>
-
-                <ModalSection>
-                  <ModalSectionTitle>Detalles del incidente</ModalSectionTitle>
-                  {params.location && (
-                    <ModalInfoRow>
-                      <ModalInfoLabel>Ubicación:</ModalInfoLabel>
-                      <ModalInfoValue>{params.location}</ModalInfoValue>
-                    </ModalInfoRow>
-                  )}
-                  {params.date && (
-                    <ModalInfoRow>
-                      <ModalInfoLabel>Fecha:</ModalInfoLabel>
-                      <ModalInfoValue>{params.date}</ModalInfoValue>
-                    </ModalInfoRow>
-                  )}
-                  {params.time && (
-                    <ModalInfoRow>
-                      <ModalInfoLabel>Hora:</ModalInfoLabel>
-                      <ModalInfoValue>{params.time}</ModalInfoValue>
-                    </ModalInfoRow>
-                  )}
-                </ModalSection>
-
-                <ModalButton onPress={handleConfirm}>
-                  <ModalButtonText>Confirmar y crear caso</ModalButtonText>
-                </ModalButton>
-                
-                <CancelButton onPress={() => setModalVisible(false)}>
-                  <CancelButtonText>Cancelar</CancelButtonText>
-                </CancelButton>
-              </>
-            )}
-          </ModalContent>
-        </ModalOverlay>
+        <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={{ flex: 1 }}>
+          <ModalContainer>
+            <AnimatedModalContent
+              style={{
+                opacity: modalAnim,
+                transform: [
+                  {
+                    scale: modalAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+                shadowColor: '#000',
+                shadowOpacity: 0.18,
+                shadowRadius: 24,
+                elevation: 12,
+              }}
+            >
+              <ModalTitle>Detalle del elemento</ModalTitle>
+              {selectedElement && (
+                <>
+                  <ModalLabel>Nombre:</ModalLabel>
+                  <ModalValue>{selectedElement.nombre} {selectedElement.apellido}</ModalValue>
+                  <ModalLabel>Cargo:</ModalLabel>
+                  <ModalValue>{selectedElement.cargo}</ModalValue>
+                  <ModalLabel>PNC:</ModalLabel>
+                  <ModalValue>{selectedElement.pnc}</ModalValue>
+                </>
+              )}
+              <CloseButton onPress={handleClose}>
+                <CloseText>Cerrar</CloseText>
+              </CloseButton>
+            </AnimatedModalContent>
+          </ModalContainer>
+        </BlurView>
       </Modal>
     </GradientBackground>
   );

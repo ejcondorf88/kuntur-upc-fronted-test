@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
+
 import { useCreateCase } from '../hooks/useCreateCase';
 import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
 import { MockCase, useMockCases } from '../hooks/useMockCases';
@@ -16,62 +17,6 @@ const GradientBackground = styled(LinearGradient)`
   padding: 16px;
 `;
 
-// Header with refined spacing
-const Header = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  margin-top: 64px;
-  margin-bottom: 32px;
-`;
-
-// Logo row with centered alignment
-const LogoRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-`;
-
-// Logo image with slightly larger size
-const LogoImage = styled.Image`
-  width: 56px;
-  height: 56px;
-  resize-mode: contain;
-`;
-
-// Title block with improved spacing
-const TitleBlock = styled.View`
-  margin-left: 16px;
-`;
-
-// Main title with refined typography
-const KunturTitle = styled.Text`
-  font-size: ${({ theme }) => theme.typography.h1.fontSize}px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.onPrimary};
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-`;
-
-// Subtitle with improved readability
-const Subtitle = styled.Text`
-  font-size: ${({ theme }) => theme.typography.caption.fontSize}px;
-  font-weight: 400;
-  color: ${({ theme }) => theme.colors.onPrimary};
-  opacity: 0.8;
-  margin-top: 4px;
-`;
-
-// Building icon with subtle shadow
-const BuildingIcon = styled.View`
-  margin-left: 16px;
-  shadow-color: ${({ theme }) => theme.colors.onPrimary};
-  shadow-opacity: 0.3;
-  shadow-radius: 4px;
-  elevation: 4;
-`;
-
-// Main title with modern styling
 const MainTitle = styled.Text`
   font-size: ${({ theme }) => theme.typography.h2.fontSize}px;
   font-weight: 600;
@@ -260,6 +205,7 @@ async function completarCamposConOpenAI(alertData, camposVacios) {
   }
 }
 
+
 export default function CasosScreen() {
   const theme = useTheme();
   const cases = useMockCases();
@@ -285,6 +231,7 @@ export default function CasosScreen() {
     ]).start();
     setCreateModalVisible(true);
   };
+
 
   // Llenar el modal con alertData si está disponible
   useEffect(() => {
@@ -327,9 +274,21 @@ export default function CasosScreen() {
   const openModal = (c: MockCase) => {
     setSelectedCase(c);
     setModalVisible(true);
+    Animated.timing(modalAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
-
-  const closeModal = () => setModalVisible(false);
+  const closeModal = () => {
+    Animated.timing(modalAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setModalVisible(false);
+    });
+  };
 
   const handleCreateCase = async () => {
     setCreateModalVisible(false);
@@ -419,25 +378,15 @@ export default function CasosScreen() {
 
   return (
     <GradientBackground
-      colors={[theme.colors.gradientStart, theme.colors.gradientEnd]}
+      colors={[theme.colors.primary, theme.colors.secondary]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <Header>
-        <LogoRow>
-          <TouchableOpacity onPress={() => router.push('/')}>
-            <LogoImage source={require('../assets/images/icon.png')} />
-          </TouchableOpacity>
-          <TitleBlock>
-            <KunturTitle>KUNTUR</KunturTitle>
-            <Subtitle>Seguridad desde las nubes</Subtitle>
-          </TitleBlock>
-        </LogoRow>
-        <BuildingIcon>
-          <Ionicons name="business" size={44} color={theme.colors.onPrimary} />
-        </BuildingIcon>
-      </Header>
-      <MainTitle>Casos registrados</MainTitle>
+      <AppHeader
+        title="Casos"
+        subtitle="Lista de casos recientes"
+      />
+      <MainTitle>Casos detectados</MainTitle>
       <FilterRow>
         <FilterButton>
           <Ionicons name="chevron-down" size={18} color={theme.colors.onPrimary} />
@@ -563,50 +512,57 @@ export default function CasosScreen() {
           </ModalContent>
         </ModalContainer>
       </Modal>
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeModal}
-      >
-        <ModalContainer>
-          <ModalContent>
-            {selectedCase && (
-              <>
-                <ModalTitle>{selectedCase.id}</ModalTitle>
-                <ModalLabel>Fecha:</ModalLabel>
-                <ModalValue>{selectedCase.fecha}</ModalValue>
-                <ModalLabel>Tipo:</ModalLabel>
-                <ModalValue>{selectedCase.tipo}</ModalValue>
-                <ModalLabel>Ubicación:</ModalLabel>
-                <ModalValue>{selectedCase.ubicacion}</ModalValue>
-                <ModalLabel>Oficial:</ModalLabel>
-                <ModalValue>{selectedCase.oficial}</ModalValue>
-                <ModalLabel>Estado:</ModalLabel>
-                <ModalValue>{selectedCase.estado}</ModalValue>
-                <ModalLabel>Descripción:</ModalLabel>
-                <ModalValue>{selectedCase.descripcion}</ModalValue>
-                <TouchableOpacity
-                  style={{ borderRadius: 12, marginTop: 24 }}
-                  onPress={() => selectedCase && generarParte(selectedCase)}
-                >
-                  <GradientButton
-                    colors={[theme.colors.accent, theme.colors.accent + 'CC']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+      <Modal visible={modalVisible} transparent animationType="none">
+        <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={{ flex: 1 }}>
+          <ModalContainer>
+            <AnimatedModalContent
+              style={{
+                opacity: modalAnim,
+                transform: [
+                  {
+                    scale: modalAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+                shadowColor: '#000',
+                shadowOpacity: 0.18,
+                shadowRadius: 24,
+                elevation: 12,
+              }}
+            >
+              <ModalTitle>Detalle del caso</ModalTitle>
+              {selectedCase && (
+                <>
+                  <ModalLabel>ID:</ModalLabel>
+                  <ModalValue>{selectedCase.id}</ModalValue>
+                  <ModalLabel>Fecha:</ModalLabel>
+                  <ModalValue>{selectedCase.fecha}</ModalValue>
+                  <ModalLabel>Tipo:</ModalLabel>
+                  <ModalValue>{selectedCase.tipo}</ModalValue>
+                  <ModalLabel>Ubicación:</ModalLabel>
+                  <ModalValue>{selectedCase.ubicacion}</ModalValue>
+                  <ModalLabel>Oficial:</ModalLabel>
+                  <ModalValue>{selectedCase.oficial}</ModalValue>
+                  <ModalLabel>Estado:</ModalLabel>
+                  <ModalValue>{selectedCase.estado}</ModalValue>
+                  <ModalLabel>Descripción:</ModalLabel>
+                  <ModalValue>{selectedCase.descripcion}</ModalValue>
+                  <TouchableOpacity
+                    style={{marginTop: 24, backgroundColor: theme.colors.secondary, borderRadius: 16, paddingVertical: 12, alignItems: 'center'}}
+                    onPress={() => selectedCase && generarParte(selectedCase)}
                   >
-                    <Text style={{ color: theme.colors.onPrimary, fontWeight: '700', fontSize: 16, textAlign: 'center', paddingVertical: 12 }}>
-                      Generar parte policial
-                    </Text>
-                  </GradientButton>
-                </TouchableOpacity>
-              </>
-            )}
-            <CloseButton onPress={closeModal}>
-              <CloseText>Cerrar</CloseText>
-            </CloseButton>
-          </ModalContent>
-        </ModalContainer>
+                    <Text style={{color: theme.colors.onPrimary, fontWeight: 'bold', fontSize: 16}}>Generar parte policial</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              <CloseButton onPress={closeModal}>
+                <CloseText>Cerrar</CloseText>
+              </CloseButton>
+            </AnimatedModalContent>
+          </ModalContainer>
+        </BlurView>
       </Modal>
       {loadingRequest && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}>
