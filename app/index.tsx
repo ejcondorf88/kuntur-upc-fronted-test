@@ -6,7 +6,7 @@ import { Animated, Dimensions, StatusBar } from 'react-native';
 import styled from 'styled-components/native';
 import { Header as AppHeader } from '../components/Header';
 import { Button } from '../components/ui/Button';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { useRabbitPolling } from '../hooks/useRabbitPolling';
 import { useTheme } from '../theme/them';
 
 const { width, height } = Dimensions.get('window');
@@ -121,13 +121,18 @@ const CenterLogo = styled.Image`
 const StatusIndicator = styled.View`
   flex-direction: row;
   align-items: center;
-  background-color: ${({ active, theme }) => 
-    active ? 'rgba(76, 175, 80, 0.2)' : 'rgba(158, 158, 158, 0.2)'};
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   padding: 8px 16px;
   margin-top: 16px;
-  border: 1px solid ${({ active, theme }) => 
-    active ? 'rgba(76, 175, 80, 0.4)' : 'rgba(158, 158, 158, 0.4)'};
+  border: 1px solid rgba(255, 255, 255, 0.2);
+`;
+
+const StatusDot = styled.View`
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #4CAF50;
 `;
 
 const StatusText = styled.Text`
@@ -135,14 +140,6 @@ const StatusText = styled.Text`
   font-size: 14px;
   font-weight: 500;
   margin-left: 8px;
-`;
-
-const StatusDot = styled.View`
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  background-color: ${({ active }) => 
-    active ? '#4CAF50' : '#9E9E9E'};
 `;
 
 const BottomArea = styled.View`
@@ -171,9 +168,9 @@ const PulseAnimation = styled(Animated.View)`
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { alert, loading, error, ackAlert } = useRabbitPolling(2000);
   const [lastMessage, setLastMessage] = useState<any>(null);
-  const ws = useWebSocket('ws://127.0.0.1:8001/ws/1');
-
+  
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
@@ -197,60 +194,25 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (ws.lastMessage) {
-      setLastMessage(ws.lastMessage);
-      console.log('Notificación recibida, habilitando botón:', ws.lastMessage);
-      
-      // Animación del botón cuando se activa
-      Animated.sequence([
-        Animated.spring(buttonScaleAnim, {
-          toValue: 1.05,
-          useNativeDriver: true,
-          speed: 20,
-        }),
-        Animated.spring(buttonScaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          speed: 20,
-        }),
-      ]).start();
-
-      // Animación de pulso para el botón activo
-      const startPulse = () => {
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          if (lastMessage) startPulse();
-        });
-      };
-      startPulse();
+    console.log('alert:', alert);
+    // Solo setear si hay alerta nueva y no hay lastMessage
+    if (alert && !lastMessage) {
+      setLastMessage(alert);
     }
-  }, [ws.lastMessage]);
+    // NO limpiar lastMessage cuando alert es null
+  }, [alert, lastMessage]);
 
   const isButtonEnabled = !!lastMessage;
 
   useFocusEffect(
     useCallback(() => {
-      setLastMessage(null);
       pulseAnim.setValue(0);
       buttonScaleAnim.setValue(0.9);
     }, [])
   );
 
-  const handlePress = () => {
-    if (!lastMessage) {
-      console.log('No hay lastMessage, no se navega');
-      return;
-    }
+  const handlePress = async () => {
+    if (!lastMessage) return;
     
     // Animación de tap
     Animated.sequence([
@@ -266,19 +228,14 @@ export default function HomeScreen() {
       }),
     ]).start();
 
-    const params = {
-      cameraId: '1',
-      ip: lastMessage.ip || lastMessage.stream_url || '192.168.1.10',
-      location: lastMessage.location || '',
-      date: lastMessage.date || '',
-      time: lastMessage.time || '',
-      transcription_video: lastMessage.transcription_video || '',
-      key_words: (lastMessage.key_words || []).join(', '),
-      cordinates: lastMessage.cordinates ? JSON.stringify(lastMessage.cordinates) : undefined,
-      confidence_level: lastMessage.confidence_level || undefined,
-    };
-    console.log('Navegando a /connection-info/[cameraId] con params:', params);
-    router.push({ pathname: '/connection-info/[cameraId]', params });
+    console.log('Enviando alertData a connection-info:', lastMessage);
+    // Pasar el JSON completo como alertData
+    router.push({
+      pathname: '/connection-info/[cameraId]',
+      params: { cameraId: '1', alertData: JSON.stringify(lastMessage) }
+    });
+    await ackAlert();
+    setLastMessage(null);
   };
 
   return (
@@ -289,21 +246,81 @@ export default function HomeScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <AppHeader
-          title="Kuntur UPC"
-          subtitle="Sistema de monitoreo inteligente"
-        />
-        <MainTitle>Bienvenido</MainTitle>
-        <CenterLogo source={require('../assets/images/react-logo.png')} />
-        <BottomArea>
-          <Button
-            title={isButtonEnabled ? 'Ver caso detectado' : 'Esperando alerta...'}
-            onPress={handlePress}
-            disabled={!isButtonEnabled}
-            variant={isButtonEnabled ? 'primary' : 'secondary'}
-            size="large"
-          />
-        </BottomArea>
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
+          <Header>
+            <LogoRow>
+              <LogoImage source={require('../assets/images/image.png')} />
+              <TitleBlock>
+                <KunturTitle>KUNTUR</KunturTitle>
+                <Subtitle>Seguridad desde las nubes</Subtitle>
+              </TitleBlock>
+            </LogoRow>
+            <BuildingIconContainer>
+              <Ionicons name="business" size={40} color={theme.colors.onPrimary} />
+            </BuildingIconContainer>
+          </Header>
+
+          <MainContent>
+            <MainTitle>Sistema de Alertas</MainTitle>
+            
+            <AlertCard>
+              <CenterLogo source={require('../assets/images/image.png')} />
+              
+              <StatusIndicator>
+                <StatusDot />
+                <StatusText>
+                  {isButtonEnabled ? 'Evento detectado' : 'Monitoreando...'}
+                </StatusText>
+              </StatusIndicator>
+              
+              {/* Estado de carga o error */}
+              <StatusIndicator>
+                <StatusDot />
+                <StatusText>
+                  {loading ? 'Verificando...' : error ? `Error: ${error}` : 'Sistema listo'}
+                </StatusText>
+              </StatusIndicator>
+            </AlertCard>
+          </MainContent>
+
+          <BottomArea>
+            <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
+              {isButtonEnabled && (
+                <PulseAnimation style={{ transform: [{ scale: pulseAnim }] }} />
+              )}
+              <Button
+                title="Responder a Evento"
+                onPress={handlePress}
+                variant="outline"
+                size="large"
+                icon={<Ionicons 
+                  name={isButtonEnabled ? "notifications-outline" : "notifications-off-outline"} 
+                  size={22} 
+                  color={isButtonEnabled ? theme.colors.error : theme.colors.onPrimary} 
+                />}
+                style={{ 
+                  backgroundColor: isButtonEnabled ? theme.colors.onPrimary : 'rgba(255, 255, 255, 0.1)',
+                  borderColor: isButtonEnabled ? theme.colors.error : 'rgba(255, 255, 255, 0.3)',
+                  borderWidth: 2,
+                  borderRadius: 25,
+                  paddingVertical: 16,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }}
+                textStyle={{ 
+                  color: isButtonEnabled ? theme.colors.error : theme.colors.onPrimary,
+                  fontWeight: 'bold',
+                  fontSize: 18,
+                  letterSpacing: 1,
+                }}
+                disabled={!isButtonEnabled}
+              />
+            </AnimatedButton>
+          </BottomArea>
+        </Animated.View>
       </GradientBackground>
     </Container>
   );

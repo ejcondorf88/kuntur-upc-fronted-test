@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, ScrollView, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
+import YoutubePlayer from 'react-native-youtube-iframe';
 import styled from 'styled-components/native';
 import { useTheme } from '../../theme/them';
 
@@ -294,7 +295,14 @@ const AnimatedButton = styled(Animated.View)`
 `;
 
 export default function ConnectionInfoScreen() {
-  const { cameraId, ip, location, date, time, transcription_video, key_words, cordinates, confidence_level } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const alertData = params.alertData ? JSON.parse(params.alertData) : {};
+  const deliveryTag = Array.isArray(params.deliveryTag)
+    ? Number(params.deliveryTag[0])
+    : params.deliveryTag
+      ? Number(params.deliveryTag)
+      : null;
+  console.log('alertData recibido en connection-info:', alertData);
   const router = useRouter();
   const theme = useTheme();
   const [streamError, setStreamError] = useState(false);
@@ -325,13 +333,41 @@ export default function ConnectionInfoScreen() {
   }, []);
 
   // Asegurar que ip sea string
-  const ipStr = Array.isArray(ip) ? ip[0] : ip;
+  const ipStr = alertData.ip || alertData.stream_url || '';
   console.log('Valor de ipStr en ConnectionInfoScreen:', ipStr);
 
+  // Reemplazar variables sueltas por alertData
+  const dateStr = alertData.date || '';
+  const timeStr = alertData.time || '';
+  const transcriptionVideo = alertData.transcription_video || '';
+  const keyWords = Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || '';
+  const cordinates = alertData.cordinates;
+  const confidenceLevel = alertData.confidence_level || alertData['confidence level'] || undefined;
+
+  const clipUrl = Array.isArray(alertData.stream_url)
+    ? alertData.stream_url[0]
+    : alertData.stream_url;
+
+  const getYoutubeId = (url: string) => {
+    const match = url.match(/(?:youtube\.com.*(?:[\\?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  };
+  const videoId = clipUrl ? getYoutubeId(clipUrl) : null;
+
   // Función para manejar falsa alarma
-  const handleFalsaAlarma = () => {
+  const handleFalsaAlarma = async () => {
     console.log('Falsa alarma detectada - cerrando conexión al stream');
-    
+
+    // Consumir el mensaje de RabbitMQ si hay deliveryTag
+    if (deliveryTag) {
+      console.log('Enviando a ack_alerta:', { delivery_tag: deliveryTag });
+      await fetch('http://localhost:8001/ack_alerta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delivery_tag: deliveryTag })
+      });
+    }
+
     // Animación de botón
     Animated.sequence([
       Animated.timing(buttonScaleAnim, {
@@ -475,7 +511,7 @@ export default function ConnectionInfoScreen() {
 
               <CameraContainer>
                 <CameraHeader>
-                  <CameraLabel>Cámara {cameraId}</CameraLabel>
+                  <CameraLabel>Cámara {params.cameraId}</CameraLabel>
                   <StreamStatus>
                     <StatusDot connected={isConnected} />
                     <StatusText>
@@ -483,45 +519,16 @@ export default function ConnectionInfoScreen() {
                     </StatusText>
                   </StreamStatus>
                 </CameraHeader>
-
                 <VideoContainer>
-                  {ipStr && ipStr.startsWith('rtsp://') ? (
-                    <ErrorContainer>
-                      <Ionicons name="alert-circle-outline" size={48} color="#ff6b6b" />
-                      <ErrorText>No se puede mostrar video RTSP en web</ErrorText>
-                      <RetryText>Usa una URL HTTP/HLS compatible</RetryText>
-                    </ErrorContainer>
-                  ) : ipStr && (ipStr.startsWith('http://') || ipStr.startsWith('https://')) ? (
-                    <>
-                      {streamError ? (
-                        <ErrorContainer>
-                          <Ionicons name="warning-outline" size={48} color="#ff6b6b" />
-                          <ErrorText>Error de conexión al stream</ErrorText>
-                          {isReconnecting && (
-                            <RetryText>Reintentando... ({retryCount}/3)</RetryText>
-                          )}
-                          {retryCount >= 3 && (
-                            <RetryText>No se pudo conectar después de 3 intentos</RetryText>
-                          )}
-                        </ErrorContainer>
-                      ) : (
-                        <video 
-                          ref={videoRef}
-                          controls 
-                          autoPlay 
-                          style={{ width: '100%', height: '100%' }}
-                          onError={handleStreamError}
-                          onLoad={handleStreamLoad}
-                        >
-                          <source src={String(ipStr)} />
-                          Tu navegador no soporta video embebido.
-                        </video>
-                      )}
-                    </>
+                  {videoId ? (
+                    <YoutubePlayer
+                      height={220}
+                      play={false}
+                      videoId={videoId}
+                    />
                   ) : (
                     <ErrorContainer>
-                      <Ionicons name="videocam-off-outline" size={48} color="#ff6b6b" />
-                      <ErrorText>No hay stream disponible</ErrorText>
+                      <ErrorText>No hay clip disponible</ErrorText>
                     </ErrorContainer>
                   )}
                 </VideoContainer>
@@ -547,20 +554,11 @@ export default function ConnectionInfoScreen() {
                     bgColor="rgba(185, 251, 192, 0.9)" 
                     borderColor="#2DC653"
                     onPress={() => handleButtonPress(() => {
-                      const paramsToSend = {
-                        ip: ip || '',
-                        location: location || '',
-                        date: date || '',
-                        time: time || '',
-                        transcription_video: transcription_video || '',
-                        key_words: key_words || '',
-                        cordinates: typeof cordinates !== 'undefined' ? (typeof cordinates === 'string' ? cordinates : JSON.stringify(cordinates)) : undefined,
-                        confidence_level: typeof confidence_level !== 'undefined' ? confidence_level : undefined,
-                      };
-                      console.log('Params que se envían a /elementos:', paramsToSend);
+                      // Al navegar a elementos:
+                      console.log('Enviando alertData a elementos:', alertData);
                       router.push({
                         pathname: '/elementos',
-                        params: paramsToSend
+                        params: { alertData: JSON.stringify(alertData) }
                       });
                     })}
                   >
@@ -588,7 +586,7 @@ export default function ConnectionInfoScreen() {
   }
 
   // Si no hay IP, usa el mapa estático como antes
-  const camera = cameraMap[cameraId as string];
+  const camera = cameraMap[params.cameraId as string];
   if (!camera) {
     return (
       <Container>
@@ -649,7 +647,14 @@ export default function ConnectionInfoScreen() {
               </CameraHeader>
 
               <VideoContainer>
-                <WebView source={{ uri: `http://${camera.ip}/video` }} style={{ flex: 1 }} />
+                {camera.ip ? (
+                  <WebView source={{ uri: `http://${camera.ip}/video` }} style={{ flex: 1 }} />
+                ) : (
+                  <ErrorContainer>
+                    <Ionicons name="videocam-off-outline" size={48} color="#ff6b6b" />
+                    <ErrorText>No hay stream disponible (IP no definida)</ErrorText>
+                  </ErrorContainer>
+                )}
               </VideoContainer>
 
               <StreamInfo>

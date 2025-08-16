@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
+import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Animated, Modal, ScrollView, Text, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
+import { ActivityIndicator, Animated, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
-import { Header as AppHeader } from '../components/Header';
+
 import { useCreateCase } from '../hooks/useCreateCase';
 import { useGeneratePartePolicial } from '../hooks/useGeneratePartePolicial';
 import { MockCase, useMockCases } from '../hooks/useMockCases';
@@ -90,9 +90,9 @@ const ModalContainer = styled.View`
 const ModalContent = styled.View`
   background-color: ${({ theme }) => theme.colors.cardBackground};
   border-radius: 16px;
-  padding: 24px;
-  width: 90%;
-  max-width: 420px;
+  padding: 16px;
+  width: 96%;
+  max-width: 340px;
   elevation: 8;
   shadow-color: ${({ theme }) => theme.colors.cardShadow};
   shadow-opacity: 0.3;
@@ -155,36 +155,56 @@ const StyledTextInput = styled.TextInput`
   border: 1px solid ${({ theme }) => theme.colors.onSurface}33;
 `;
 
-// Floating action button with gradient
-const FAB = styled(LinearGradient)`
+// Enhanced Floating Action Button with gradient and animation
+const FAB = styled(TouchableOpacity)`
   position: absolute;
   bottom: 32px;
   right: 32px;
-  border-radius: 32px;
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
+  border-radius: 36px;
   justify-content: center;
   align-items: center;
-  elevation: 6;
-  shadow-color: ${({ theme }) => theme.colors.cardShadow};
-  shadow-opacity: 0.4;
-  shadow-radius: 8px;
+  elevation: 10;
+  shadow-color: ${({ theme }) => theme.colors.primary};
+  shadow-opacity: 0.35;
+  shadow-radius: 14px;
+  shadow-offset: 0px 8px;
 `;
 
-const BottomArea = styled.View`
-  position: absolute;
-  left: 32px;
-  bottom: 48px;
-  align-items: flex-start;
-  padding: 0 24px;
-`;
-
-const AnimatedButton = styled(Animated.View)`
+const FABGradient = styled(LinearGradient)`
   width: 100%;
-  max-width: 320px;
+  height: 100%;
+  border-radius: 36px;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid ${({ theme }) => theme.colors.onPrimary}33;
 `;
 
-const AnimatedModalContent = Animated.createAnimatedComponent(ModalContent);
+const FABText = styled.Text`
+  color: ${({ theme }) => theme.colors.onPrimary};
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 4px;
+`;
+
+// Función para autocompletar campos usando la API local
+async function completarCamposConOpenAI(alertData, camposVacios) {
+  const response = await fetch('http://localhost:8001/api/completar-campos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ alertData, camposVacios })
+  });
+  const data = await response.json();
+  console.log('Respuesta de completar-campos:', data);
+  try {
+    return typeof data.completados === 'string' ? JSON.parse(data.completados) : data.completados;
+  } catch {
+    return {};
+  }
+}
+
 
 export default function CasosScreen() {
   const theme = useTheme();
@@ -194,40 +214,62 @@ export default function CasosScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newCase, setNewCase] = useState({
-    id: '', fecha: '', ubicacion: '', tipo: '', estado: '', nombrePolicia: '', rango: '', unidad: '', idOficial: '', resumen: '', palabrasClave: '', hora: '', pnc: '',
+    id: '', fecha: '', ubicacion: '', tipo: '', estado: '', nombrePolicia: '', rango: '', unidad: '', idOficial: '', resumen: '', palabrasClave: '', hora: '', pnc: '', codigoDelito: 'a',
   });
   const router = useRouter();
   const params = useLocalSearchParams();
+  const alertData = params.alertData ? JSON.parse(params.alertData) : {};
+  console.log('alertData recibido en casos:', alertData);
   const { createCase, loading, error, result } = useCreateCase();
-  const [modalAnim] = useState(new Animated.Value(0));
-  const colorScheme = useColorScheme();
+  const buttonScaleAnim = React.useRef(new Animated.Value(1)).current;
+  const [loadingRequest, setLoadingRequest] = useState(false);
 
+  const handleFabPress = () => {
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, { toValue: 0.92, duration: 100, useNativeDriver: true }),
+      Animated.timing(buttonScaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+    ]).start();
+    setCreateModalVisible(true);
+  };
+
+
+  // Llenar el modal con alertData si está disponible
   useEffect(() => {
-    if (createModalVisible) {
-      console.log('Autollenando modal de crear caso con:', params);
-      setNewCase((prev) => {
-        const ubicacion = (typeof params.location === 'string' ? params.location : Array.isArray(params.location) ? params.location[0] : '') || prev.ubicacion;
-        const fecha = (typeof params.date === 'string' ? params.date : Array.isArray(params.date) ? params.date[0] : '') || prev.fecha;
-        const resumen = (typeof params.transcription_video === 'string' ? params.transcription_video : Array.isArray(params.transcription_video) ? params.transcription_video[0] : '') || prev.resumen;
-        const palabrasClave = (typeof params.key_words === 'string' ? params.key_words : Array.isArray(params.key_words) ? params.key_words[0] : '') || prev.palabrasClave || '';
-        const hora = (typeof params.time === 'string' ? params.time : Array.isArray(params.time) ? params.time[0] : '') || prev.hora || '';
-        const nombrePolicia = (typeof params.nombrePolicia === 'string' ? params.nombrePolicia : Array.isArray(params.nombrePolicia) ? params.nombrePolicia[0] : '') || prev.nombrePolicia || '';
-        const rango = (typeof params.rango === 'string' ? params.rango : Array.isArray(params.rango) ? params.rango[0] : '') || prev.rango || '';
-        const pnc = (typeof params.pnc === 'string' ? params.pnc : Array.isArray(params.pnc) ? params.pnc[0] : '') || prev.pnc || '';
-        return {
+    if (createModalVisible && alertData) {
+      // Detecta campos vacíos
+      const camposVacios = Object.keys(newCase).filter(key => !newCase[key]);
+      if (camposVacios.length > 0) {
+        (async () => {
+          const completados = await completarCamposConOpenAI(alertData, camposVacios);
+          setNewCase((prev) => ({
+            ...prev,
+            ...completados,
+            ubicacion: alertData.location || prev.ubicacion,
+            fecha: alertData.date || prev.fecha,
+            resumen: alertData.transcription_video || prev.resumen,
+            palabrasClave: Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || prev.palabrasClave || '',
+            hora: alertData.time || prev.hora || '',
+            nombrePolicia: params.nombrePolicia || prev.nombrePolicia || '',
+            rango: params.rango || prev.rango || '',
+            pnc: params.pnc || prev.pnc || '',
+          }));
+        })();
+      } else {
+        setNewCase((prev) => ({
           ...prev,
-          ubicacion,
-          fecha,
-          resumen,
-          palabrasClave,
-          hora,
-          nombrePolicia,
-          rango,
-          pnc,
-        };
-      });
+          ubicacion: alertData.location || prev.ubicacion,
+          fecha: alertData.date || prev.fecha,
+          resumen: alertData.transcription_video || prev.resumen,
+          palabrasClave: Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || prev.palabrasClave || '',
+          hora: alertData.time || prev.hora || '',
+          nombrePolicia: params.nombrePolicia || prev.nombrePolicia || '',
+          rango: params.rango || prev.rango || '',
+          pnc: params.pnc || prev.pnc || '',
+        }));
+      }
     }
-  }, [createModalVisible, params]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createModalVisible, alertData, params]);
 
   const openModal = (c: MockCase) => {
     setSelectedCase(c);
@@ -250,69 +292,58 @@ export default function CasosScreen() {
 
   const handleCreateCase = async () => {
     setCreateModalVisible(false);
+    setLoadingRequest(true);
     try {
       let cordinatesObj = undefined;
-      if (params.cordinates) {
+      if (alertData.cordinates) {
         try {
-          cordinatesObj = typeof params.cordinates === 'string' ? JSON.parse(params.cordinates) : params.cordinates;
+          cordinatesObj = typeof alertData.cordinates === 'string' ? JSON.parse(alertData.cordinates) : alertData.cordinates;
         } catch (e) {
           cordinatesObj = undefined;
         }
       }
       const partePolicial = {
-        ubicacion: params.location || newCase.ubicacion,
-        fecha: params.date || newCase.fecha,
-        hora: params.time || newCase.hora,
-        descripcion: params.transcription_video || newCase.resumen,
-        palabrasClave: params.key_words || newCase.palabrasClave,
-        nivelConfianza: params.confidence_level,
-        alerta: params.alert_information,
+        ubicacion: alertData.location || newCase.ubicacion,
+        fecha: alertData.date || newCase.fecha,
+        hora: alertData.time || newCase.hora,
+        descripcion: alertData.transcription_video || newCase.resumen,
+        palabrasClave: Array.isArray(alertData.key_words) ? alertData.key_words.join(', ') : alertData.key_words || newCase.palabrasClave,
+        nivelConfianza: alertData['confidence level'] || alertData.confidence_level,
+        alerta: alertData.alert_information,
         dispositivo: {
-          id: params.device_id,
-          tipo: params.device_type,
-          ip: params.ip || params.stream_url,
+          id: alertData.device_id,
+          tipo: alertData.device_type,
+          ip: alertData.ip || alertData.stream_url,
         },
-        coordenadas:
-          cordinatesObj && typeof cordinatesObj === 'object' && 'latitude' in cordinatesObj && 'longitude' in cordinatesObj
-            ? {
-                lat: cordinatesObj.latitude,
-                lng: cordinatesObj.longitude,
-              }
-            : undefined,
-        duracionVideo: params.media_duration,
+        coordenadas: cordinatesObj && typeof cordinatesObj === 'object' && 'latitude' in cordinatesObj && 'longitude' in cordinatesObj
+          ? {
+            lat: cordinatesObj.latitude,
+            lng: cordinatesObj.longitude,
+          }
+          : undefined,
+        duracionVideo: alertData.media_duration,
         nombrePolicia: newCase.nombrePolicia,
         rango: newCase.rango,
         pnc: newCase.pnc,
+        codigoDelito: newCase.codigoDelito,
+        user: alertData.user || 'usuario_desconocido',
       };
-      console.log('Parte policial a enviar:', partePolicial);
+      console.log('Datos que se enviarán al backend:', partePolicial);
       const res = await createCase(partePolicial);
-      if (res instanceof Blob) {
-        const pdfUrl = URL.createObjectURL(res);
-        window.open(pdfUrl, '_blank');
-      } else {
-        console.log('Caso creado en backend:', res);
-      }
+      console.log('Respuesta del backend:', res);
+      setLoadingRequest(false);
+      router.push({
+        pathname: '/crear-caso',
+        params: {
+          ...params,
+          ...(typeof res === 'object' ? res : {}),
+          alertData: params.alertData,
+        },
+      });
     } catch (err) {
+      setLoadingRequest(false);
       console.log('Error al crear caso en backend:', err);
     }
-    router.push({
-      pathname: '/crear-caso',
-      params: {
-        id: newCase.id,
-        fecha: newCase.fecha,
-        ubicacion: newCase.ubicacion,
-        tipo: newCase.tipo,
-        estado: newCase.estado,
-        nombrePolicia: newCase.nombrePolicia,
-        rango: newCase.rango,
-        unidad: newCase.unidad,
-        idOficial: newCase.idOficial,
-        resumen: newCase.resumen,
-        palabrasClave: newCase.palabrasClave,
-        hora: newCase.hora,
-        pnc: newCase.pnc,
-      },
-    });
     setNewCase({
       id: '',
       fecha: '',
@@ -327,8 +358,23 @@ export default function CasosScreen() {
       palabrasClave: '',
       hora: '',
       pnc: '',
+      codigoDelito: 'a',
     });
   };
+
+  // Render the enhanced FAB
+  const renderFAB = () => (
+    <FAB onPress={handleFabPress} activeOpacity={0.8}>
+      <FABGradient
+        colors={[theme.colors.primary, theme.colors.accent + 'CC']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name="add" size={28} color={theme.colors.onPrimary} />
+        <FABText>Crear</FABText>
+      </FABGradient>
+    </FAB>
+  );
 
   return (
     <GradientBackground
@@ -361,39 +407,7 @@ export default function CasosScreen() {
           </CaseCard>
         ))}
       </ScrollView>
-      <BottomArea>
-        <AnimatedButton style={{ transform: [{ scale: buttonScaleAnim }] }}>
-          <Button
-            title="Crear caso"
-            onPress={handleFabPress}
-            variant="outline"
-            size="large"
-            icon={<Ionicons name="add" size={28} color={theme.colors.secondary} />}
-            style={{
-              backgroundColor: theme.colors.primary,
-              borderColor: theme.colors.secondary,
-              borderWidth: 2,
-              borderRadius: 32,
-              paddingVertical: 16,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
-              width: 64,
-              height: 64,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-            textStyle={{
-              color: theme.colors.secondary,
-              fontWeight: 'bold',
-              fontSize: 18,
-              letterSpacing: 1,
-            }}
-          />
-        </AnimatedButton>
-      </BottomArea>
+      {renderFAB()}
       <Modal
         visible={createModalVisible}
         transparent
@@ -433,6 +447,19 @@ export default function CasosScreen() {
               value={newCase.estado}
               onChangeText={(text) => setNewCase({ ...newCase, estado: text })}
             />
+            <Text style={{ color: theme.colors.secondary, fontWeight: '600', fontSize: 15, marginTop: 10, alignSelf: 'flex-start' }}>
+              Código de delito
+            </Text>
+            <Picker
+              selectedValue={newCase.codigoDelito}
+              style={{ width: '100%', color: theme.colors.secondary, backgroundColor: theme.colors.surface + 'CC', borderRadius: 10, marginBottom: 10 }}
+              onValueChange={(itemValue) => setNewCase({ ...newCase, codigoDelito: itemValue })}
+            >
+              <Picker.Item label="A" value="a" />
+              <Picker.Item label="B" value="b" />
+              <Picker.Item label="C" value="c" />
+              <Picker.Item label="D" value="d" />
+            </Picker>
             <Text style={{ color: theme.colors.secondary, fontWeight: '600', fontSize: 16, marginTop: 12, alignSelf: 'flex-start' }}>
               Datos del Oficial que Atendió
             </Text>
@@ -537,6 +564,12 @@ export default function CasosScreen() {
           </ModalContainer>
         </BlurView>
       </Modal>
+      {loadingRequest && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}>
+          <ActivityIndicator size="large" color="#667eea" />
+          <Text style={{ color: '#fff', marginTop: 12, fontWeight: 'bold' }}>Enviando datos...</Text>
+        </View>
+      )}
     </GradientBackground>
   );
 }
