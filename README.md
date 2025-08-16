@@ -112,10 +112,4 @@ kuntur-upc-fronted-test/
 
 ---
 
-## Créditos
 
-Desarrollado por el equipo Kuntur UPC.
-
----
-
-¿Dudas? Abre un issue o contacta al equipo.
